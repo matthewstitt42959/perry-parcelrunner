@@ -5,7 +5,9 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "node index.js"
+    "dev": "next dev",
+    "start": "next start", 
+    "build": "next build"
   },
   "dependencies": {
     "express": "^4.19.2",

@@ -1,42 +1,24 @@
-import { useState } from 'react';
-import axios from 'axios'; 
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import { debuglog } from 'util';
+import { resolve } from 'path';
 
 
-export default function UrlInputComponent({onResponse}) {
+export default function UrlInputComponent({ onResponse }) {
 
     const [selectedOption, setSelectedOption] = useState('');
     //State for the selected option
-    const [fullUrl, setFullUrl] = useState('');
+    const [url, setUrl] = useState('');
     // State to store the full URL 
     const [displayUrl, setDisplayUrl] = useState('');
     // State to store the formatted URL for display
+    const [responseData, setResponseData] = useState(null);
+    const [error, setError] = useState(null);
+    const [loading, setLoading] = useState(false);
 
 
     const handleUrlChange = (e) => {
-        const url = e.target.value;
-
-        //Save the full URL
-        setFullUrl(url);
-
-        //Check if the URL is not empty and valid
-        if (url.trim() === '') {
-            setDisplayUrl('');
-            return;
-        }
-
-        try {
-            //Use the URL API to parse the URL
-            const parsedURL = new URL(url);
-
-            //Format the display URL to show only protocol, hostname, and pathname (no query params)
-            const formattedUrl = `${parsedURL.protocol}//${parsedURL.hostname}${parsedURL.pathname}`;
-
-            // Update the display URL with the formatted version
-            setDisplayUrl(formattedUrl);
-        } catch (error) {
-            //If the URL is invalid, show it as-is
-            setDisplayUrl(url);
-        }
+        setUrl(e.target.value);
     };
 
     //Function to handle paste event
@@ -47,42 +29,73 @@ export default function UrlInputComponent({onResponse}) {
         try {
             const parsedURL = new URL(pastedData);
             //If valid then paste
-            setFullUrl(pastedData);
+            setUrl(pastedData);
             //Format the display URL to show only protocol, hostname, and pathname (no query params)
             const formattedUrl = `${parsedURL.protocol}//${parsedURL.hostname}${parsedURL.pathname}`;
             setDisplayUrl(formattedUrl);
+
         } catch (error) {
             e.preventDefault();
             alert('Invalid URL pasted');
         }
     };
 
+    const fetchWithTimeout = (displayUrl, options, timeout = 5000) => {
+        //debugger
+        return new Promise((resolve, reject) => {
+            const timer = setTimeout(() => {
+                reject(new Error("Request timed out"));
+            }, timeout);
+            fetch(displayUrl, options)
+                .then((response) => {
+                    clearTimeout(timer);
+                    //Clear the timeout when the request is successful
+                    resolve(response);
+
+                })
+                .catch((err) => {
+                    clearTimeout(timer);
+                    //Clear when there is an error
+                    reject(err);
+                })
+        });
+    };
 
     //Function to handle the form submission
     const handleSend = async () => {
-        
+        setError(null);
+        setResponseData(null);
+        setLoading(true);
+
+        //debugger
         try {
-          
-            console.log(`Fetching: /api/proxy?url=${fullUrl}`)
-            //Send the data to the proxy
- 
-            const response = await axios(`/api/proxy?url=${fullUrl}`); 
-      
+            console.log(`Sending request to: /api/proxy?url=${displayUrl}`)
+            // debugger
+            const response = await fetchWithTimeout(`/api/proxy?url=${displayUrl}`, {}, 5000);
 
-            if(!response.ok){
-                throw new Error('Network response was not ok'); 
+
+            if (!response.ok) {
+                throw new Error(`Network response was not ok: ${response.statusText}`);
             }
-            const data = await response.json(); 
+            console.log("Response Data: ", response);
 
-            console.log(`Response returned: ${data}`); 
-            
-           onResponse(data); 
-            //Set the response data to be passed to HomeComponent
+            let data;
+            try {
+                data = await response.text();
+            } catch (jsonError) {
+                throw new Error("Invalid JSON received from the server");
+            }
+            setResponseData(data);
+            onResponse(data);
+            // onResponse passes response to HomeComponent
+
         } catch (error) {
-            setErrorMessage('Error fetching data: ', error);
-            //Display the error in the UI
-            onResponse({data: null, error: `Error fetching data: ${error.message}` })
+            console.error('Error fetching data: ', error);
+            onResponse(null, `An error occurred: ${error.message}`);
+        } finally {
+            setLoading(false);
         }
+
     };
 
     return (
@@ -97,14 +110,23 @@ export default function UrlInputComponent({onResponse}) {
             </select>
 
             {/* Input field */}
-            <input required className="form-control" type="text" value={displayUrl}
-                onChange={handleUrlChange} placeholder="https://example.com" />
-
+            <input required className="form-control"
+                type="text"
+                value={displayUrl}
+                onChange={handleUrlChange}
+                onPaste={handlePaste}
+                placeholder="https://example.com" />
 
             {/* Button to trigger the send */}
-            <button type="submit" className="btn btn-primary" onClick={handleSend}>Send</button>
+            <button type="submit" className="btn btn-primary" onClick={handleSend}
+                disabled={loading}>{loading ? 'Loading...' : 'Send'}
+            </button>
 
 
-        </div></>
+        </div>
+
+            
+ 
+        </>
     );
 }

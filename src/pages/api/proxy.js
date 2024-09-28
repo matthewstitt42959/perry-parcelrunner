@@ -1,50 +1,45 @@
 
-const { exec } = require('child_process');
+
+import axios from 'axios'; 
+
+
+process.env.NODE_EXTRA_CA_CERTS = ('C:/Users/266833/Documents/Workplace/certificate/cacert.pem')
 
 //const apiUrl = 'https://api.printful.com'
 //const hostURL = 'https://jsonplaceholder.typicode.com/posts';
 
 
 export default async function handler(req, res) {
-
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  const { url } = req.query;
- 
-
-  if (!url) {
+  const {url} = req.query
   
-    return res.status(400).json({ error: 'No URL provided' });
+  if(!url){
+    return res.status(400).json({error: 'No URL provided' }); 
   }
+  console.log(`Received request from URL: ${url}`); 
 
-  //Construct the curl command. The -k flag tells curl to bypass SSL verification
-  //Modify the command as necessary
+try{
+    const response = await axios.get(url)
 
-  const curlCommand = `curl -s -k ${url}`;
+    console.log('Response data: ', response.data); 
 
-  // Execute
-  exec(curlCommand, (error, stdout, stderr) => {
-
-    if (error) {
-      console.error(`Error executing curl: ${error.message}`);
-      return res.status(500).json({ error: `Error executing curl: ${error.message}` });
+   return res.status(200).json(response.data); 
+      
+  }catch(error) {
+      console.error('Error in proxy request: ', error.message);
+      //Server responses with an error code
+      if(error.response){
+      console.error('Axios Response Error: ', error.response.status); 
+      console.error('Axios Response Data: ', error.response.data); 
+      return res.status(error.response.status).json({error: error.response.data || `External API error: ${error.response.status}`, 
+      })
+      }else if(error.request) {
+        console.error('No response received from the external API: ', error.request);
+        return res.status(502).json({ error: 'No response received from the external API'}); 
+      }else{
+        console.error('Error setting up the request: ', error.message); 
+        return res.status(500).json({ error: `Internal Server Error: ${error.message}` }); 
+      }
+      
     }
-    if (stderr) {
-      console.error(`Curl stderr: ${stderr}`);
-    }
-    if (stdout) {
-      console.log(`Curl stdout (response): ${stdout}`);
-      const curlResponse = res.json(stdout);
-       
-      return res.status(200).send(curlResponse); 
-
-    } else {
-      return res.status(500).json({ error: 'No content returned from the curl command' });
-    }
-
-  })
-
 };
-
+ 

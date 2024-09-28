@@ -21,6 +21,9 @@ export default function
   }else{
     setErrorMessage(null); 
     //Clear previous errors
+    if(data === undefined){
+      setResponseData("undefined");
+    }
     setResponseData(data); 
     //Set Response data
   }
@@ -43,16 +46,16 @@ export default function
         </div>
       </form>
 
-      <form>
+      <div>
           <h3>API Response</h3>
           {/* Conditionally render the Body component */}
-          {responseData || <ResponseBody responseData={responseData} />}
+          {<ResponseBody responseData={responseData} />}
 
           {/* Display an Error, if any */}
-          {errorMessage && <p style={{ color: 'red'}}> {error}</p>}
+          {errorMessage && <p style={{ color: 'red'}}> {errorMessage}</p>}
                  
        
-      </form>
+      </div>
 
     </div>
   );

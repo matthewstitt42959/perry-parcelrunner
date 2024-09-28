@@ -2,4 +2,5 @@
     max-height: 200px 
 };
 .data-response-headers {
-    display: grid; grid-template-columns: auto 1fr; gap: .5rem 2rem}
+    display: grid; grid-template-columns: auto 1fr; gap: .5rem 2rem};
+

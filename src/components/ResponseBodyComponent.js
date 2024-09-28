@@ -1,6 +1,14 @@
 import React from 'react'; 
 
 export default function ResponseBody({responseData, errorMessage}) {
+    const formattedData = JSON.stringify(responseData, null, 2).replace(/,/g, ',<br />');
+   
+    ({responseData}) => {
+        if(!responseData){
+            return null; 
+            //return nothing if there is nothing
+        }
+    }
     return (
         
         <div>
@@ -12,11 +20,7 @@ export default function ResponseBody({responseData, errorMessage}) {
         )}
         {/* Display the response data as formatted JSON */}
     
-        <div>
-            <pre>{JSON.stringify(responseData, null, 2)}</pre>
-            
-        </div>
-  
+        <pre dangerouslySetInnerHTML={{__html: formattedData }} />
     </div>
     );
 }

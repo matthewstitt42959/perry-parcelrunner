@@ -3,7 +3,7 @@ import Head from "next/head";
 import { useState } from "react";
 import PostmanComponent from "../components/HomeComponent";
 import TabsComponent from "../components/TabsComponent";
-
+import 'bootstrap/dist/css/bootstrap.min.css'; 
 
       export default function HomePage(){
         return (

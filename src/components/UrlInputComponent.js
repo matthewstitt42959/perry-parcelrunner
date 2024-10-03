@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { debuglog } from 'util';
-import { resolve } from 'path';
 
 
-export default function UrlInputComponent({ onResponse }) {
 
-    const [selectedOption, setSelectedOption] = useState('');
-    //State for the selected option
+export default function UrlInputComponent({ onResponse, body }) {
+
+    const [selectedMethod, setSelectedMethod] = useState('GET');
+    //State for the selected method
+
     const [url, setUrl] = useState('');
     // State to store the full URL 
     const [displayUrl, setDisplayUrl] = useState('');
@@ -16,10 +15,14 @@ export default function UrlInputComponent({ onResponse }) {
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
 
-
-    const handleUrlChange = (e) => {
-        setUrl(e.target.value);
+    // Method Handlers
+    const handleUrlChange = (e) => { setUrl(e.target.value); };
+    const handleMethodChange = (e) => { 
+        const selectedMethod=(e.target.value);
+        setSelectedMethod(e); 
+        // Pass the selected Method to HomeComponent
     };
+    
 
     //Function to handle paste event
     const handlePaste = (e) => {
@@ -68,11 +71,53 @@ export default function UrlInputComponent({ onResponse }) {
         setLoading(true);
 
         //debugger
+        console.log(`Sending request to: /api/proxy?url=${displayUrl}`)
         try {
-            console.log(`Sending request to: /api/proxy?url=${displayUrl}`)
-            // debugger
-            const response = await fetchWithTimeout(`/api/proxy?url=${displayUrl}`, {}, 5000);
+            if
+                (selectedMethod === 'GET' || selectedMethod === 'DELETE') {
 
+                const response = await fetchWithTimeout(`/api/proxy?url=${displayUrl}`, {
+                    method: selectedMethod,
+                }, 5000,
+
+                );
+
+                if (!response.ok) {
+                    throw new Error(`Network response was not ok: ${response.statusText}`);
+                }
+                console.log("Response Data: ", response);
+
+                let data;
+                try {
+                    data = await response.text();
+                } catch (jsonError) {
+                    throw new Error("Invalid JSON received from the server");
+                }
+                setResponseData(data);
+                onResponse(data);
+                // onResponse passes response to HomeComponent
+
+            } else if
+                (selectedMethod === 'POST' || selectedMethod === 'PUT') {
+                if (body) {
+                    try {
+                        requestData = JSON.parse(body);
+                    } catch (parseError) {
+                        throw new Error('Invalid JSON format in the request body');
+                    }
+                } else {
+                    throw new Error('Request body is empty for POST/PUT method');
+                }
+            }
+
+            const response = await fetchWithTimeout(`/api/proxy?url=${displayUrl}`, {
+                method: selectedMethod,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: selectedMethod === 'POST' || selectedMethod === 'PUT' ? JSON.stringify(requestData) :
+                    null, // Only include body for POST/PUT
+            }, 5000);
 
             if (!response.ok) {
                 throw new Error(`Network response was not ok: ${response.statusText}`);
@@ -87,8 +132,7 @@ export default function UrlInputComponent({ onResponse }) {
             }
             setResponseData(data);
             onResponse(data);
-            // onResponse passes response to HomeComponent
-
+            // onResponse passes response to HomeComponent   
         } catch (error) {
             console.error('Error fetching data: ', error);
             onResponse(null, `An error occurred: ${error.message}`);
@@ -100,7 +144,8 @@ export default function UrlInputComponent({ onResponse }) {
 
     return (
         <><div className="input-group mb-4">
-            <select className="form-select flex-grow-0 w-auto" id='status' value={selectedOption} onChange={(e) => setSelectedOption(e.target.value)}
+            <label htmlFor="selectedMethod">Method: </label>
+            <select className="form-select flex-grow-0 w-auto" id="selectedMethod" value={selectedMethod} onChange={handleMethodChange}
             >
                 <option value="GET">GET</option>
                 <option value="POST">POST</option>
@@ -117,6 +162,8 @@ export default function UrlInputComponent({ onResponse }) {
                 onPaste={handlePaste}
                 placeholder="https://example.com" />
 
+
+
             {/* Button to trigger the send */}
             <button type="submit" className="btn btn-primary" onClick={handleSend}
                 disabled={loading}>{loading ? 'Loading...' : 'Send'}
@@ -125,8 +172,7 @@ export default function UrlInputComponent({ onResponse }) {
 
         </div>
 
-            
- 
+
         </>
     );
 }

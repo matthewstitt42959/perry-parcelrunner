@@ -1,7 +1,9 @@
 
 
 import axios from 'axios'; 
-
+import https from 'https';
+import fs from 'fs'; 
+import { resolve } from 'path';
 
 process.env.NODE_EXTRA_CA_CERTS = ('C:/Users/266833/Documents/Workplace/certificate/cacert.pem')
 
@@ -10,21 +12,21 @@ process.env.NODE_EXTRA_CA_CERTS = ('C:/Users/266833/Documents/Workplace/certific
 
 
 export default async function handler(req, res) {
-  const {url} = req.query
-  
-  if(!url){
+  const apiUrl = req.query.url 
+  if(!apiUrl){
     return res.status(400).json({error: 'No URL provided' }); 
   }
-  console.log(`Received request from URL: ${url}`); 
-
-try{
-    const response = await axios.get(url)
-
-    console.log('Response data: ', response.data); 
-
-   return res.status(200).json(response.data); 
+ 
+  const ca = fs.readFileSync(process.env.NODE_EXTRA_CA_CERTS)
+  const agent = new https.Agent({ca:ca, rejectUnauthorized: true})
+    const response = await axios.get(apiUrl,{httpsAgent: agent })
+    .then(response => {
+      res.setHeader('Content-type', 'application/json'); 
       
-  }catch(error) {
+    return res.status(200).json(response.data); 
+      
+    })
+    .catch(error => {
       console.error('Error in proxy request: ', error.message);
       //Server responses with an error code
       if(error.response){
@@ -40,6 +42,6 @@ try{
         return res.status(500).json({ error: `Internal Server Error: ${error.message}` }); 
       }
       
-    }
+      });
 };
  

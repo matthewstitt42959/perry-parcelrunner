@@ -1,28 +1,28 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'react-toastify'; // Import toast
 
 
-
-export default function UrlInputComponent({ onResponse, body }) {
-
+export default function UrlInputComponent({ onResponse, requestBody, method, headers }) {
     const [selectedMethod, setSelectedMethod] = useState('GET');
-    //State for the selected method
-
-    const [url, setUrl] = useState('');
-    // State to store the full URL 
-    const [displayUrl, setDisplayUrl] = useState('');
-    // State to store the formatted URL for display
+    const [url, setUrl] = useState(''); // Consolidated state for URL
+    const [responseBody, setResponseBody] = useState('');
     const [responseData, setResponseData] = useState(null);
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
 
+    useEffect(() => {
+        setUrl(''); // Initialize `url` on mount
+    }, []);
+
     // Method Handlers
     const handleUrlChange = (e) => { setUrl(e.target.value); };
-    const handleMethodChange = (e) => { 
-        const selectedMethod=(e.target.value);
-        setSelectedMethod(e); 
+    const handleMethodChange = (e) => {
+        const selectedMethod = e.target.value;
+        setSelectedMethod(selectedMethod); //Set the selected method state
         // Pass the selected Method to HomeComponent
+        onResponse(null, selectedMethod);
     };
-    
+
 
     //Function to handle paste event
     const handlePaste = (e) => {
@@ -32,10 +32,11 @@ export default function UrlInputComponent({ onResponse, body }) {
         try {
             const parsedURL = new URL(pastedData);
             //If valid then paste
-            setUrl(pastedData);
+            //setUrl(pastedData);
             //Format the display URL to show only protocol, hostname, and pathname (no query params)
             const formattedUrl = `${parsedURL.protocol}//${parsedURL.hostname}${parsedURL.pathname}`;
-            setDisplayUrl(formattedUrl);
+            debugger
+            // setUrl(formattedUrl);
 
         } catch (error) {
             e.preventDefault();
@@ -43,13 +44,13 @@ export default function UrlInputComponent({ onResponse, body }) {
         }
     };
 
-    const fetchWithTimeout = (displayUrl, options, timeout = 5000) => {
-        //debugger
+    const fetchWithTimeout = (url, options, timeout = 5000) => {
+        debugger
         return new Promise((resolve, reject) => {
             const timer = setTimeout(() => {
                 reject(new Error("Request timed out"));
             }, timeout);
-            fetch(displayUrl, options)
+            fetch(url, options)
                 .then((response) => {
                     clearTimeout(timer);
                     //Clear the timeout when the request is successful
@@ -65,112 +66,92 @@ export default function UrlInputComponent({ onResponse, body }) {
     };
 
     //Function to handle the form submission
-    const handleSend = async () => {
+    const handleSend = async (event) => {
+
+        console.log("handleSend Called!!!")
+
+        event.preventDefault();
+
         setError(null);
         setResponseData(null);
         setLoading(true);
 
-        //debugger
-        console.log(`Sending request to: /api/proxy?url=${displayUrl}`)
         try {
-            if
-                (selectedMethod === 'GET' || selectedMethod === 'DELETE') {
-
-                const response = await fetchWithTimeout(`/api/proxy?url=${displayUrl}`, {
-                    method: selectedMethod,
-                }, 5000,
-
-                );
-
-                if (!response.ok) {
-                    throw new Error(`Network response was not ok: ${response.statusText}`);
-                }
-                console.log("Response Data: ", response);
-
-                let data;
-                try {
-                    data = await response.text();
-                } catch (jsonError) {
-                    throw new Error("Invalid JSON received from the server");
-                }
-                setResponseData(data);
-                onResponse(data);
-                // onResponse passes response to HomeComponent
-
-            } else if
-                (selectedMethod === 'POST' || selectedMethod === 'PUT') {
-                if (body) {
-                    try {
-                        requestData = JSON.parse(body);
-                    } catch (parseError) {
-                        throw new Error('Invalid JSON format in the request body');
-                    }
-                } else {
-                    throw new Error('Request body is empty for POST/PUT method');
-                }
-            }
-
-            const response = await fetchWithTimeout(`/api/proxy?url=${displayUrl}`, {
+            const urlWithProxy = `/api/proxy?url=${url}`;
+            let options = {
                 method: selectedMethod,
+                body: requestBody,
                 headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: selectedMethod === 'POST' || selectedMethod === 'PUT' ? JSON.stringify(requestData) :
-                    null, // Only include body for POST/PUT
-            }, 5000);
+                    ...headers.reduce((acc, header) => {
+                        if (header.key) {
+                            acc[header.key] = header.value;
+                        }
+                        return acc;
+                    }, {}),
+                }
+            };
 
-            if (!response.ok) {
-                throw new Error(`Network response was not ok: ${response.statusText}`);
-            }
-            console.log("Response Data: ", response);
+            if (['POST', 'PUT', 'PATCH'].includes(selectedMethod) && !requestBody) {
 
-            let data;
-            try {
-                data = await response.text();
-            } catch (jsonError) {
-                throw new Error("Invalid JSON received from the server");
+                try {
+                    const requestData = JSON.parse(requestBody);
+                    options.body = JSON.stringify(requestData);
+
+                } catch (jsonError) {
+                    const errorMsg = "Invalid JSON received from the server.";
+                    setError(errorMsg);
+                    onResponse(null, errorMsg);
+                    return;
+                }
+            } else if (['GET', 'HEAD'].includes(selectedMethod)) {
+                delete options.body; // Remove the body
             }
+            let response = await fetchWithTimeout(urlWithProxy, options, 5000);
+
+            const data = await response.text();
             setResponseData(data);
-            onResponse(data);
-            // onResponse passes response to HomeComponent   
+            onResponse(data, selectedMethod);
         } catch (error) {
-            console.error('Error fetching data: ', error);
-            onResponse(null, `An error occurred: ${error.message}`);
+            const errorMsg = `An error occurred: ${error.message}`;
+            console.error('Error fetching data: ', errorMsg);
+            setError(errorMsg);
+            onResponse(null, errorMsg);
         } finally {
             setLoading(false);
         }
-
     };
 
     return (
-        <><div className="input-group mb-4">
-            <label htmlFor="selectedMethod">Method: </label>
-            <select className="form-select flex-grow-0 w-auto" id="selectedMethod" value={selectedMethod} onChange={handleMethodChange}
-            >
-                <option value="GET">GET</option>
-                <option value="POST">POST</option>
-                <option value="PUT">PUT</option>
-                <option value="PATCH">PATCH</option>
-                <option value="DELETE">DELETE</option>
-            </select>
+        <>
+            <form className='input-group mb-4'>
 
-            {/* Input field */}
-            <input required className="form-control"
-                type="text"
-                value={displayUrl}
-                onChange={handleUrlChange}
-                onPaste={handlePaste}
-                placeholder="https://example.com" />
+                <select className="form-select flex-grow-0 w-auto"
+                    id="selectedMethod"
+                    value={selectedMethod}
+                    onChange={handleMethodChange}>
+                    <option value="GET">GET</option>
+                    <option value="POST">POST</option>
+                    <option value="PUT">PUT</option>
+                    <option value="PATCH">PATCH</option>
+                    <option value="DELETE">DELETE</option>
+                </select>
 
+                {/* Input field */}
+                <input required className="form-control"
+                    type="text"
+                    value={url}
+                    onChange={handleUrlChange}
+                    onPaste={handlePaste}
+                    placeholder="https://example.com" />
 
+                {/* Button to trigger the send */}
+                <button type="submit" className="btn btn-primary" onClick={handleSend}
+                    disabled={loading ||
+                        (['POST', 'PUT'].includes(selectedMethod) && !requestBody)}>
+                    {loading ? 'Loading...' : 'Send'}
+                </button>
+            </form>
 
-            {/* Button to trigger the send */}
-            <button type="submit" className="btn btn-primary" onClick={handleSend}
-                disabled={loading}>{loading ? 'Loading...' : 'Send'}
-            </button>
-
-
-        </div>
 
 
         </>

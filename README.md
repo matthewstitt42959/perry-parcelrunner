@@ -44,3 +44,4 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
    npm install node-fetch
    npm install axios
    npm config set strict-ssl false
+   npm install react-toastify

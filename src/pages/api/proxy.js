@@ -19,14 +19,23 @@ export default async function handler(req, res) {
  
   const ca = fs.readFileSync(process.env.NODE_EXTRA_CA_CERTS)
   const agent = new https.Agent({ca:ca, rejectUnauthorized: true})
-    const response = await axios.get(apiUrl,{httpsAgent: agent })
-    .then(response => {
-      res.setHeader('Content-type', 'application/json'); 
-      
+
+    const method = req.method; //Get the request method
+    const data = method === 'POST' ? req.body : null
+    // Only include body for POST request
+    try{
+    const response = await axios(apiUrl,{
+      method: method, 
+      httpsAgent: agent, 
+      data: data, // Include body for POST, null for GET
+      headers: {
+        'Content-Type': 'application/json', 
+      },
+    });
+    res.setHeader('Content-type', 'application/json'); 
     return res.status(200).json(response.data); 
-      
-    })
-    .catch(error => {
+  }catch(error) {
+
       console.error('Error in proxy request: ', error.message);
       //Server responses with an error code
       if(error.response){
@@ -42,6 +51,6 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: `Internal Server Error: ${error.message}` }); 
       }
       
-      });
+      }
 };
  

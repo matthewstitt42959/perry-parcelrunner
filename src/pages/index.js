@@ -1,9 +1,10 @@
 import React from "react";
 import Head from "next/head";
 import { useState } from "react";
-import PostmanComponent from "../components/HomeComponent";
-import TabsComponent from "../components/TabsComponent";
+import HomeComponent from "../components/HomeComponent";
 import 'bootstrap/dist/css/bootstrap.min.css'; 
+import { ToastContainer } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css'; 
 
       export default function HomePage(){
         return (
@@ -16,25 +17,19 @@ import 'bootstrap/dist/css/bootstrap.min.css';
         
                 <title>Mock Postman</title>
               </Head>
-            </div>
+            
         
-              <h1> Welcome to my Website</h1>
+              <h1> Postman Clone -mstitt</h1>
+              <ToastContainer position="top-right" autoClose={3000}
+              hideProgressBar={false} closeOnClick draggable pauseOnHover />
              
       
              {/* Render the tabbed interface */}
-             <TabsComponent/>
-        
+             <HomeComponent/>
+             </div>
               
-              {/* { 
-                <template data-key-value-template>
-                <div className="input-group my-2" data-key-value-pair>
-                  <input type="text" data-key className="form-control" placeholder="Key" />
-                  <input type="text" data-value className="form-control" placeholder="Value" />
-                  <button type="button" data-remove-btn className="btn btn-outline-danger">Remove</button>
-                </div>
-              </template> 
-              } */}
               </div>
         
               )
+              
       } 

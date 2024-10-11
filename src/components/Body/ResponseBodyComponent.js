@@ -11,7 +11,7 @@ export default function ResponseBody({responseData, errorMessage}) {
     }
     return (
         
-        <div>
+        <div className="border mt-4 bg-gray-100 p-4">
         {/* Display the error message, if it exists */}
         {errorMessage &&(
             <div style={{color: 'red', marginBottom: '10px'}}>

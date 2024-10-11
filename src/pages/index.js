@@ -6,9 +6,10 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import { ToastContainer } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css'; 
 
+
       export default function HomePage(){
         return (
-          <div>
+          <div className="container bg-color">
             <div>
               <Head>
                 <meta charSet="UTF-8" />
@@ -17,19 +18,20 @@ import 'react-toastify/dist/ReactToastify.css';
         
                 <title>Mock Postman</title>
               </Head>
-            
+                  
         
-              <h1> Postman Clone -mstitt</h1>
+              <h1 className="text-4xl font-bold text-black-600 mb-4"> Postman Clone -mstitt</h1>
               <ToastContainer position="top-right" autoClose={3000}
               hideProgressBar={false} closeOnClick draggable pauseOnHover />
              
       
              {/* Render the tabbed interface */}
              <HomeComponent/>
+             
              </div>
               
               </div>
-        
+              
               )
               
       } 

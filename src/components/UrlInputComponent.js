@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify'; // Import toast
-
+import { Button } from '@windmill/react-ui';
 
 export default function UrlInputComponent({ onResponse, requestBody, method, headers }) {
     const [selectedMethod, setSelectedMethod] = useState('GET');
@@ -45,7 +45,7 @@ export default function UrlInputComponent({ onResponse, requestBody, method, hea
     };
 
     const fetchWithTimeout = (url, options, timeout = 5000) => {
-        debugger
+        
         return new Promise((resolve, reject) => {
             const timer = setTimeout(() => {
                 reject(new Error("Request timed out"));
@@ -78,6 +78,7 @@ export default function UrlInputComponent({ onResponse, requestBody, method, hea
 
         try {
             const urlWithProxy = `/api/proxy?url=${url}`;
+       
             let options = {
                 method: selectedMethod,
                 body: requestBody,
@@ -125,7 +126,7 @@ export default function UrlInputComponent({ onResponse, requestBody, method, hea
         <>
             <form className='input-group mb-4'>
 
-                <select className="form-select flex-grow-0 w-auto"
+                <select className="bg-purple text-white hover:bg-purple-700 flex-grow-0 w-24 "
                     id="selectedMethod"
                     value={selectedMethod}
                     onChange={handleMethodChange}>
@@ -145,11 +146,11 @@ export default function UrlInputComponent({ onResponse, requestBody, method, hea
                     placeholder="https://example.com" />
 
                 {/* Button to trigger the send */}
-                <button type="submit" className="btn btn-primary" onClick={handleSend}
+                <Button type="submit" className="bg-purple text-white hover:bg-purple-700 px-button py-button" onClick={handleSend}
                     disabled={loading ||
                         (['POST', 'PUT'].includes(selectedMethod) && !requestBody)}>
                     {loading ? 'Loading...' : 'Send'}
-                </button>
+                </Button>
             </form>
 
 

@@ -1,94 +1,105 @@
 import { useState, useEffect } from 'react';
-
+import Heading from './FormatUtilites/Format_Heading';
+import Button from './FormatUtilites/Format_Button';
+import Authorization from '../lib/user.json';
+import { Table, TableBody, TableCell, TableHeader, TableRow } from '@windmill/react-ui';
 
 export default function HeaderTab({ onHeaderChange }) {
-    console.log("onHeaderChange:", onHeaderChange);
-    if (typeof onHeaderChange !== 'function'){
-        console.error("onHeaderChange is not a function");
-        
-    }
 
     const [headerData, setHeaderData] = useState([
-        { key: 'Authorization', value: '' },
-        { key: 'Cache-Control', value: 'no-cache' },
-        { key: 'Token', value: '' },
-        { key: 'Content-Type', value: 'application/json' },
-        { key: 'Accept', value: 'application/json' },
-        { key: 'Accept-Encoding', value: 'gzip, deflate, br' },
-        { key: 'Connection', value: 'keep-alive' },
-        { key: '', value: '' },
+        { key: 'Authorization', value: Authorization.token, disabled: false },
+        { key: 'Cache-Control', value: 'no-cache', disabled: false },
+        { key: 'Content-Type', value: 'application/json', disabled: false },
+        { key: 'Accept', value: 'application/json', disabled: false },
+
     ]);
 
+    console.log('HeaderTabComponent rendered. Initial headerData:', headerData);
 
     const handleInputChange = (index, field, value) => {
         const newHeaderData = [...headerData];
         newHeaderData[index][field] = value;
         setHeaderData(newHeaderData);
     };
+    const handleCheckboxChange = (index) =>{
+        const newHeaderData = [...headerData];
+        newHeaderData[index].disabled = !newHeaderData[index].disabled; 
+        //Toggle the disable state
+        setHeaderData(newHeaderData);
 
+    };
     const addRow = () => {
-        setHeaderData([...headerData, { key: '', value: '' }]);
-    }
+        const newRow = { key: '', value: '', disabled: false }
+        setHeaderData([...headerData, newRow]);
+        console.log('Added new row. Current headerData:', headerData); // Log the new row addition
+    };
+
+    const deleteRow = (index) =>{
+        const newHeaderData = headerData.filter((_, i) => i !== index); 
+        setHeaderData(newHeaderData); 
+    };
+
     useEffect(() => {
-        // Notify parent when headerData changes
+       
         if (onHeaderChange) {
-        onHeaderChange(headerData);
+            console.log('Passing headerData to HomeComponents: ', headerData);
+            onHeaderChange(headerData);
         }
-    }, [headerData, onHeaderChange]);
+
+    }, [headerData], [onHeaderChange]);
+
 
     return (
-        <div>
-            <h2>Header Tab Content</h2>
-            <p> This is the content for Header</p>
-            <div className="p-4">
-                <form data-form>
-                    <div className="input-group mb-6">
-                        <div>
-                            {/* Table to display the Header Key/Values */}
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Key</th>
-                                        <th>Value</th>
-                                    </tr>
-                                </thead>
-
-                                <tbody>
-                                    {headerData.map((row, index) => (
-                                        <tr key={index}>
-                                            <td>
-                                                <input
-                                                    type='text'
-                                                    value={row.key}
-                                                    onChange={(e) => handleInputChange(index, 'key', e.target.value)} />
-                                            </td>
-                                            <td>
-                                                <input
-                                                    type='text'
-                                                    value={row.value}
-                                                    onChange={(e) => handleInputChange(index, 'value', e.target.value)} />
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-
-                            <button className="mt-2 btn btn-outline-success"
-                                type="button"
-                                onClick={addRow}
-                            >Add Row</button>
-                            {/* Need to add Remove row and select Checkbox row */}
-
-                        </div>
-
-                    </div>
-                </form>
-            </div>
+        <div style={{height: 'auto', width: '750px'}}>
+            <Heading>Manage Headers</Heading>
+            <Table style={{ tableLayout: 'auto', width: 'auto' }}>
+                <TableHeader>
+                    <TableRow>
+                        <TableCell className='flex items-center text-sm'>Key</TableCell>
+                        <TableCell>Value</TableCell>
+                        <TableCell>Enabled</TableCell> {/* Additional column for the checkbox */}
+                        <TableCell>Delete</TableCell>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {headerData.map((row, index) => (
+                        <TableRow key={index} style={{ backgroundColor: row.disabled ? 'lightgray' : 'transparent' }} // Change background color if disabled
+                        >
+                            <TableCell className='flex items-center text-sm'>
+                                <input
+                                    type='text'
+                                    value={row.key}
+                                    onChange={(e) => handleInputChange(index, 'key', e.target.value)}
+                                    disabled={row.disabled} // Disable input if the row is marked as disabled
+                                />
+                            </TableCell>
+                            <TableCell>
+                                <input
+                                    type='text'
+                                    value={row.value}
+                                    onChange={(e) => handleInputChange(index, 'value', e.target.value)}
+                                    disabled={row.disabled} // Disable input if the row is marked as disabled
+                                />
+                            </TableCell>
+                            <TableCell>
+                                <input
+                                    type='checkbox'
+                                    checked={!row.disabled}
+                                    onChange={() => handleCheckboxChange(index)}
+                                />
+                                {/* Invert checkbox behavior to represent enabled state */
+                                }
+                            </TableCell>
+                            <TableCell>
+                            <Button type='button'  onClick={() => deleteRow(index)}>X</Button>
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+            <Button type='button'
+            className="text-white bg-blue-500 hover:bg-blue-700"
+            onClick={addRow}>Add Row</Button>
         </div>
-
-
-
-
     );
 }
-

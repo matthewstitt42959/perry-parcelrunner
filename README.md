@@ -45,3 +45,5 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
    npm install axios
    npm config set strict-ssl false
    npm install react-toastify
+   ## CSS tool
+   npm install @windmill/react-ui

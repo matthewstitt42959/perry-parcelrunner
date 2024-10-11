@@ -1,7 +1,7 @@
-import { useState } from 'react';
+
 import HeaderTab from './HeaderTabComponent';
-import JSONTab from './JSONTabComponent';
-import HomeComponent from './HomeComponent';
+import { Button } from '@windmill/react-ui';
+import ParamsTab from './ParamsTabComponent';
 
 export default function TabsComponent({ activeTab, setActiveTab }) {
 
@@ -9,20 +9,10 @@ export default function TabsComponent({ activeTab, setActiveTab }) {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'query-params-tab':
-        return <div>
-          {/* Below is the Parameter code - Eventually to be included in own tab */}
-          <div className="tab-content p-3 border-top-0 border">
-            <div className="tab-pane fade show active" id="query-params" role="tabpanel" aria-labelledby="query-params-tab">
-              <div data-query-params></div>
-              <button data-add-query-param-btn className="mt-2 btn btn-outline-success" type="button">Add</button>
-            </div>
-          </div>
+        return <ParamsTab/>;
 
-        </div>;
       case 'request-headers-tab':
         return <HeaderTab />;
-      case 'json-tab':
-        return <JSONTab />;
       default:
         return 
     }
@@ -31,17 +21,14 @@ export default function TabsComponent({ activeTab, setActiveTab }) {
     <div>
       <ul className="nav nav-tabs" role="tablist">
         <li className="nav-item" role="presentation">
-          <button className="nav-link active" id="query-params-tab" data-bs-toggle="tab" data-bs-target="#query-params" type="button" role="tab" aria-controls="query-params" aria-selected="true"
-            onClick={() => setActiveTab('query-params-tab')}>Query Params</button>
+        <Button className="bg-purple text-white hover:bg-purple-700 px-button py-button" id="query-params-tab" data-bs-toggle="tab" data-bs-target="#query-params" type="button" role="tab" aria-controls="query-params" aria-selected="true"
+            onClick={() => setActiveTab('query-params-tab')}>Query Params</Button>
         </li>
         <li className="nav-item" role="presentation">
-          <button className="nav-link" id="request-headers-tab" data-bs-toggle="tab" data-bs-target="#request-headers" type="button" role="tab" aria-controls="request-headers" aria-selected="false"
-            onClick={() => setActiveTab('request-headers-tab')}>Headers</button>
+        <Button className="bg-purple text-white hover:bg-purple-700 px-button py-button" id="request-headers-tab" data-bs-toggle="tab" data-bs-target="#request-headers" type="button" role="tab" aria-controls="request-headers" aria-selected="false"
+            onClick={() => setActiveTab('request-headers-tab')}>Headers</Button>
         </li>
-        <li className="nav-item" role="presentation">
-          <button className="nav-link" id="json-tab" data-bs-toggle="tab" data-bs-target="#json" type="button" role="tab" aria-controls="json" aria-selected="false"
-            onClick={() => setActiveTab('json-tab')}>JSON</button>
-        </li>
+
       </ul>
 
       {/* Render the content of the active tab */}

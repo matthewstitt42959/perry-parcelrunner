@@ -21,10 +21,11 @@ export default async function handler(req, res) {
 
     // Prepare headers for the API request 
     const headers = {
-       // 'Authorization': `Bearer ${authorizationHeader}`, // Set the OAuth Bearer token
-        'Content-Type': req.headers['content-type'] || 'application/json', // Include content type
-        // Add other necessary headers if required
-    };
+       //  'Authorization': `Bearer ${authorizationHeader}`, // Set the OAuth Bearer token
+         'Content-Type': req.headers['content-type'] || 'application/json', // Include content type
+         // Add other necessary headers if required
+     };
+ 
 
     console.log('Request headers to be sent:', headers); // Log headers for debugging
 
@@ -34,7 +35,9 @@ export default async function handler(req, res) {
             method: method,
             httpsAgent: agent,
          //   data,
-            headers: headers        });
+            headers: headers        
+        
+        });
 
         return res.status(200).json(response.data); // Return the response from the API
     } catch (error) {

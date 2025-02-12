@@ -47,3 +47,22 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
    npm install react-toastify
    ## CSS tool
    npm install @windmill/react-ui
+
+   Updates - starting 1/26/25
+
+   1/26 - Updates to _app.js to fix UseEffect issue
+   -- added condition
+   -- Fixes - 
+   2/3 - install middleware
+   -- npm install http-proxy-middleware --save
+   -- Update webpack
+   -- export function webpack(config) {
+    config.resolve.fallback = { fs: false, net: false, ...config.resolve.fallback };
+    return config;
+}
+2/6 - add Mocha
+- npm install --save-dev mocha
+-- For unit testing
+- Add babel for jsx support
+-- npm install --save-dev @babel/core @babel/preset-env @babel/preset-react @babel/register
+-- npm install --save-dev chai

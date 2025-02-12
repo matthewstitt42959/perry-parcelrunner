@@ -2,11 +2,14 @@
   "name": "mockpostman",
   "version": "0.1.0",
   "private": true,
+  "main": "proxy2.cjs",
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "mocha --require @babel/register tests/**/*.test.js"
   },
   "dependencies": {
     "@windmill/react-ui": "^0.6.0",
@@ -14,19 +17,27 @@
     "bootstrap": "^5.3.3",
     "cors": "^2.8.5",
     "express": "^4.21.0",
-    "next": "14.2.11",
+    "http-proxy-middleware": "^3.0.3",
+    "next": "^14.2.23",
     "node-fetch": "^3.3.2",
     "react": "^18",
     "react-bootstrap": "^2.10.4",
     "react-dom": "^18",
-    "react-toastify": "^10.0.5"
+    "react-toastify": "^10.0.6"
   },
   "devDependencies": {
+    "@babel/core": "^7.26.7",
+    "@babel/preset-env": "^7.26.7",
+    "@babel/preset-react": "^7.26.3",
+    "@babel/register": "^7.25.9",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "chai": "^5.1.2",
     "eslint": "^8",
     "eslint-config-next": "14.2.11",
+    "jest-environment-jsdom": "^29.7.0",
+    "mocha": "^11.1.0",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"

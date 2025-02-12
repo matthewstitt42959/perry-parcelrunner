@@ -1,18 +1,17 @@
 import { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';  // Importing PropTypes for prop validation
 import Heading from './FormatUtilites/Format_Heading'; 
 import Button from './FormatUtilites/Format_Button'; 
 
 export default function ParamsTab({ onParamChange }) {
-    console.log("onParamChange:", onParamChange);
-    if (typeof onParamChange !== 'function'){
-        console.error("onParamChange is not a function");
-        
-    }
+    // Ensure onParamChange is a function, fallback to a no-op function
+    const handleParamChange = (typeof onParamChange === 'function') 
+        ? onParamChange 
+        : () => console.error("onParamChange is not a function");
 
     const [paramData, setParamData] = useState([
         { key: '', value: '' },
     ]);
-
 
     const handleInputChange = (index, field, value) => {
         const newParamData = [...paramData];
@@ -23,18 +22,17 @@ export default function ParamsTab({ onParamChange }) {
     const addRow = () => {
         setParamData([...paramData, { key: '', value: '' }]);
     }
+
     useEffect(() => {
         // Notify parent when paramData changes
-        if (onParamChange) {
-        onParamChange(paramData);
-        }
-    }, [paramData, onParamChange]);
+        handleParamChange(paramData);
+    }, [paramData, handleParamChange]);
 
     return (
         <div>
             <Heading>Parameter Tab Content</Heading>
-            <p> Enter a Parameter</p>
-            <div className="">
+            <p>Enter a Parameter</p>
+            <div>
                 <form data-form>
                     <div className="input-group mb-6">
                         <div>
@@ -72,14 +70,15 @@ export default function ParamsTab({ onParamChange }) {
                                 onClick={addRow}
                             >Add Row</Button>
                             {/* Need to add Remove row and select Checkbox row */}
-
                         </div>
-
                     </div>
                 </form>
             </div>
         </div>
-
     );
 }
 
+// Adding prop types for better validation
+ParamsTab.propTypes = {
+    onParamChange: PropTypes.func,
+};

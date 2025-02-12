@@ -2,6 +2,8 @@
 import HeaderTab from './HeaderTabComponent';
 import { Button } from '@windmill/react-ui';
 import ParamsTab from './ParamsTabComponent';
+import React, { useState, useEffect } from 'react';
+
 
 export default function TabsComponent({ activeTab, setActiveTab }) {
 

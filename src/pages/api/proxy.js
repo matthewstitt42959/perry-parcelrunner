@@ -12,7 +12,15 @@ export default async function handler(req, res) {
     if (!apiUrl) {
         return res.status(400).json({ error: 'No URL provided' });
     }
+    let fs;
+    if (typeof window === 'undefined') {
+        fs = require('fs');
+    }
 
+    let net;
+    if (typeof window === 'undefined') {
+        net = require('net');
+    }
     const ca = fs.readFileSync(process.env.NODE_EXTRA_CA_CERTS); // Load the CA certificate
     const agent = new https.Agent({ ca, rejectUnauthorized: true });
 
@@ -21,11 +29,11 @@ export default async function handler(req, res) {
 
     // Prepare headers for the API request 
     const headers = {
-       //  'Authorization': `Bearer ${authorizationHeader}`, // Set the OAuth Bearer token
-         'Content-Type': req.headers['content-type'] || 'application/json', // Include content type
-         // Add other necessary headers if required
-     };
- 
+        //  'Authorization': `Bearer ${authorizationHeader}`, // Set the OAuth Bearer token
+        'Content-Type': req.headers['content-type'] || 'application/json', // Include content type
+        // Add other necessary headers if required
+    };
+
 
     console.log('Request headers to be sent:', headers); // Log headers for debugging
 
@@ -34,9 +42,9 @@ export default async function handler(req, res) {
         const response = await axios(apiUrl, {
             method: method,
             httpsAgent: agent,
-         //   data,
-            headers: headers        
-        
+            //   data,
+            headers: headers
+
         });
 
         return res.status(200).json(response.data); // Return the response from the API

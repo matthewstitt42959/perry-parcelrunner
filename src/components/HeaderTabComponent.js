@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Heading from './FormatUtilites/Format_Heading';
 import Button from './FormatUtilites/Format_Button';
 import Authorization from '../lib/user.json';
@@ -21,9 +21,13 @@ export default function HeaderTab({ onHeaderChange }) {
         newHeaderData[index][field] = value;
         setHeaderData(newHeaderData);
     };
-    const handleCheckboxChange = (index) =>{
+    const updateHeaders = (newHeaderData) =>{
+        setHeaderData(newHeaderData);
+    };
+
+    const handleCheckboxChange = (index) => {
         const newHeaderData = [...headerData];
-        newHeaderData[index].disabled = !newHeaderData[index].disabled; 
+        newHeaderData[index].disabled = !newHeaderData[index].disabled;
         //Toggle the disable state
         setHeaderData(newHeaderData);
 
@@ -34,23 +38,17 @@ export default function HeaderTab({ onHeaderChange }) {
         console.log('Added new row. Current headerData:', headerData); // Log the new row addition
     };
 
-    const deleteRow = (index) =>{
-        const newHeaderData = headerData.filter((_, i) => i !== index); 
-        setHeaderData(newHeaderData); 
+    const deleteRow = (index) => {
+        const newHeaderData = headerData.filter((_, i) => i !== index);
+        setHeaderData(newHeaderData);
     };
 
-    useEffect(() => {
-       
-        if (onHeaderChange) {
-            console.log('Passing headerData to HomeComponents: ', headerData);
-            onHeaderChange(headerData);
-        }
-
-    }, [headerData], [onHeaderChange]);
 
 
     return (
-        <div style={{height: 'auto', width: '750px'}}>
+
+        <div style={{ height: 'auto', width: '750px' }}>
+      
             <Heading>Manage Headers</Heading>
             <Table style={{ tableLayout: 'auto', width: 'auto' }}>
                 <TableHeader>
@@ -91,15 +89,16 @@ export default function HeaderTab({ onHeaderChange }) {
                                 }
                             </TableCell>
                             <TableCell>
-                            <Button type='button'  onClick={() => deleteRow(index)}>X</Button>
+                                <Button type='button' onClick={() => deleteRow(index)}>X</Button>
                             </TableCell>
                         </TableRow>
                     ))}
                 </TableBody>
             </Table>
             <Button type='button'
-            className="text-white bg-blue-500 hover:bg-blue-700"
-            onClick={addRow}>Add Row</Button>
+                className="text-white bg-blue-500 hover:bg-blue-700"
+                onClick={addRow}>Add Row</Button>
+              
         </div>
     );
 }

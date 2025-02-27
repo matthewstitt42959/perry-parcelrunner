@@ -12,15 +12,8 @@ export default async function handler(req, res) {
     if (!apiUrl) {
         return res.status(400).json({ error: 'No URL provided' });
     }
-    let fs;
-    if (typeof window === 'undefined') {
-        fs = require('fs');
-    }
 
-    let net;
-    if (typeof window === 'undefined') {
-        net = require('net');
-    }
+    console.log('Authorization:', authorizationHeader); // Log the API URL for debugging
     const ca = fs.readFileSync(process.env.NODE_EXTRA_CA_CERTS); // Load the CA certificate
     const agent = new https.Agent({ ca, rejectUnauthorized: true });
 
@@ -29,9 +22,8 @@ export default async function handler(req, res) {
 
     // Prepare headers for the API request 
     const headers = {
-        //  'Authorization': `Bearer ${authorizationHeader}`, // Set the OAuth Bearer token
-        'Content-Type': req.headers['content-type'] || 'application/json', // Include content type
-        // Add other necessary headers if required
+        ...req.header,
+        Authorization: `Bearer ${authorizationHeader}`, // Add the Authorization header explicitly
     };
 
 
@@ -42,10 +34,14 @@ export default async function handler(req, res) {
         const response = await axios(apiUrl, {
             method: method,
             httpsAgent: agent,
-            //   data,
+            //  data,
             headers: headers
 
         });
+
+        // Log the response headers for debugging
+        console.log('Response headers received:', response.headers);
+
 
         return res.status(200).json(response.data); // Return the response from the API
     } catch (error) {

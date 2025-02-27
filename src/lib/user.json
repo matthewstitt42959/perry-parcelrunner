@@ -1,5 +1,9 @@
 {
-    "username": "matthewstitt49259@yahoo.com", 
-    "password": "****", 
-    "token": "PZJuIcRdlGKfzI3CDD3hratDBxxLutxqv2JHkiiR"
+    "username": "matthewstitt49259@yahoo.com",
+    "password": "****",
+    "token": "PZJuIcRdlGKfzI3CDD3hratDBxxLutxqv2JHkiiR",
+    "cacheControl": "no-cache",
+    "contentType": "application/json",
+    "accept": "application/json"
+
 }

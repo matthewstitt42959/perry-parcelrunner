@@ -1,4 +1,5 @@
-import React from 'react'; 
+
+import React, { useState, useEffect } from 'react';
 
 export default function ResponseBody({responseData, errorMessage}) {
     const formattedData = JSON.stringify(responseData, null, 2).replace(/,/g, ',<br />');

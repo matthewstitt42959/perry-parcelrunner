@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';  // Importing PropTypes for prop validation
 import Heading from './FormatUtilites/Format_Heading'; 
 import Button from './FormatUtilites/Format_Button'; 

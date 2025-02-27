@@ -66,3 +66,8 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 - Add babel for jsx support
 -- npm install --save-dev @babel/core @babel/preset-env @babel/preset-react @babel/register
 -- npm install --save-dev chai
+2/12 - GET functioning
+-- After extensive changes to framework and processes
+example api urls
+-- https://demoqa.com/BookStore/v1/Books
+-- https://api.printful.com/

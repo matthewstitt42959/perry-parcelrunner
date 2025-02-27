@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect  } from 'react';
 import MenuComponent from './MenuComponent'; // Component for managing headers
 import UrlInputComponent from './UrlInputComponent'; // Component for API calls
 import ResponseBody from './Body/ResponseBodyComponent'; // Component for displaying the response
@@ -6,10 +6,11 @@ import RequestBodyComponent from './Body/RequestBodyComponent'; // Component for
 import Heading from './FormatUtilites/Format_Heading'; // Heading component for titles
 import APIRequestComponent from './APIRequestComponent';
 import TabsComponent from './TabsComponent';
+import HeaderTab from './HeaderTabComponent'; // Import HeaderTabComponent
+
 
 export default function HomeComponent() {
     const [urlData, setUrlData] = useState({ URL: ' ', method: 'GET' });
-    const [headerData, setHeaderData] = useState([{ key: 'Content-Type', value: 'application/json' }]); // State for header information
     const [queryParams, setQueryParams] = useState({});
     const [body, setBody] = useState('');
     const [responseData, setResponseData] = useState(null); // State for API response data
@@ -17,43 +18,63 @@ export default function HomeComponent() {
     const [requestBody, setRequestBody] = useState(''); // State for request body
     const [submitted, setSubmitted] = useState(false); // Track if send button is pressed
     const [activeTab, setActiveTab] = useState('tab1'); // State for the active tab
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState('');
     const [status, setStatus] = useState('');
+    const [showHeaders, setShowHeaders] = useState(false); // State to track if Headers button is clicked
+
+
+
 
     // Function to handle submission from UrlInputComponent
     const [inputs, setInputs] = useState({
         url: '',
         method: 'GET',
-        submitted: false
+        submitted: false,
+        headers: HeaderTab.headers // Initialize headers with the initial headerData
     });
+
+      // Synchronize inputs with headerData
+      useEffect(() => {
+        setInputs((prev) => ({
+            ...prev,
+            headers: HeaderTab.headers
+        })
+    
+    );
+    }, [HeaderTab.headers]);
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         if (!inputs.url.trim()) {
             alert('Please provide a valid URL.');
             return;
         }
         // Set to false, if submitted is true to avoid dups
         if (inputs.submitted) {
-            setInputs((prev) => ({ ...prev, 
-                submitted: false }));
+            setInputs((prev) => ({
+                ...prev,
+                submitted: false
+            }));
         }
         // Update submitted to true and then send to API request component
         setTimeout(() => {
-        setInputs((prev) => ({ ...prev, 
-            method: inputs.method || "GET", 
-            submitted: true }));
-        setLoading(true);
- 
-        try {
-            // API request will be handled by APIRequestComponent
-        } catch (error) {
-            // Handle error
-        } finally {
-            setLoading(false);
-        }
-    }, 0); 
+            setInputs((prev) => ({
+                ...prev,
+                method: inputs.method || "GET",
+                submitted: true
+            }));
+            setLoading(true);
+
+            try {
+                // API request will be handled by APIRequestComponent
+            } catch (error) {
+                // Handle error
+            } finally {
+                setLoading(false);
+            }
+        }, 0); 
     };
 
     // Callback function to handle API response from APIRequestComponent
@@ -65,6 +86,16 @@ export default function HomeComponent() {
             setResponseData(data); // Set the response data
             setErrorMessage(null); // Clear error message
         }
+        setLoading(false); // Ensure loading is set to false after response
+    };
+
+    // Callback function to handle header changes from HeaderTabComponent
+    const handleHeaderButtonChange = (headerData
+    ) => {
+   
+       // setHeaderData(inputs.headers); // Update the headerData state
+        headers={headers} // Pass the latest headers from inputs to APIRequestComponent
+                  
     };
 
     // Callback function to handle header changes from MenuComponent
@@ -82,22 +113,17 @@ export default function HomeComponent() {
         <div className="flex">
             <div className="container mt-4">
                 <Heading level={2}>API Request Tool</Heading>
-                {/* Render the HeaderComponent that manages headers */}
+                
+    
                 <MenuComponent onMenuChange={handleMenuChange} />
-                {/* Render the UrlInputComponent for making the API calls */}
+                
                 <div>
                     <UrlInputComponent
                         inputs={inputs} setInputs={setInputs}
                         sendRequest={handleSubmit}
                         loading={loading} // Pass loading state for button disabling
+                        setLoading={setLoading} // Pass setLoading function to UrlInputComponent
                     />
-
-                    {/* Button to trigger the send */}
-                    <button type="submit" className="btn btn-primary" onClick={handleSubmit}
-                        disabled={loading ||
-                            (['POST', 'PUT'].includes(inputs.method) && !requestBody)}>
-                        {loading ? 'Loading...' : 'Send'}
-                    </button>
                 </div>
 
                 {/* Render the tabbed interface */}
@@ -122,8 +148,10 @@ export default function HomeComponent() {
                     <APIRequestComponent
                         onResponse={handleAPIResponse}
                         requestBody={requestBody}
-                        headers={headerData}
+                       // headers={handleHeaderButtonChange} // Pass the latest headers from inputs to APIRequestComponent
                         inputs={inputs}
+                        loading={loading} // Pass loading state to APIRequestComponent
+                        setLoading={setLoading} // Pass setLoading function to APIRequestComponent
                     />
 
                     <ResponseBody responseData={responseData} />

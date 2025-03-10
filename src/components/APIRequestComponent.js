@@ -7,11 +7,11 @@ import HeaderData_json from '../lib/user.json'; // Import Authorization
  * status message based on the outcome of the request.
  * 
  * @param {Array} headers - Array of header objects.
- * @param {Object} requestBody - The request body for POST/PUT/PATCH.
+ * @param {Object} requestData - The request body for POST/PUT/PATCH.
  * @param {Object} inputs - Input data including URL, method.
  * @param {Function} onResponse - Callback fired with the response or error message.
  */
-export default function APIRequestComponent({onResponse, requestBody, inputs, setLoading  }) {
+export default function APIRequestComponent({onResponse,  requestData, inputs, setLoading  }) {
     const [responseData, setResponseData] = useState(null); // State to manage response data
     const [error, setError] = useState(null); // State to manage error
 
@@ -23,30 +23,15 @@ export default function APIRequestComponent({onResponse, requestBody, inputs, se
         { key: 'Accept', value: HeaderData_json.accept },
     ]);
    
-    useEffect(() => {
-        // Fetch headers from user.json when the component mounts
-        const fetchHeaders = async () => {
-            try {
-                const response = await fetch(HeaderData_json);
-                const data = await response.json();
-                if (data.headers) {
-                    setHeaders(data.headers);
-                }
-            } catch (error) {
-                console.error('Error fetching headers:', error);
-            }
-        };
-        fetchHeaders();
-    }, []); // Run only once on mount
 
     useEffect(() => {
      
         if (inputs.submitted) {
             setError(null);
             setResponseData(null);
-            handleSend(inputs.url, inputs.method);
+            handleSend(inputs.url, inputs.method, requestData);
         }
-    }, [inputs, requestBody, headers]); // Add required dependencies
+    }, [inputs, requestData, headers]); // Add required dependencies
 
     // Function to construct the full API URL with query parameters
     const constructURL = (url, queryParam) => {
@@ -64,8 +49,9 @@ export default function APIRequestComponent({onResponse, requestBody, inputs, se
 
     };
 
-    const handleSend = async (url, selectedMethod) => {
-        console.log("handleSend Called!!!")
+    const handleSend = async (url, selectedMethod, requestData) => {
+        debugger
+        console.log('handleSend Called!!!')
 
         /**
          * Essential items to send for API request
@@ -80,24 +66,13 @@ export default function APIRequestComponent({onResponse, requestBody, inputs, se
         // Construct the full URL with query parameters
        // const fullURL = constructURL(url, inputs.parameters_list);
 
-
-        // Validate the request body for POST, PUT, PATCH methods
-        if (['POST', 'PUT', 'PATCH'].includes(selectedMethod) && requestBody) {
-            try {
-                JSON.parse(requestBody);
-            } catch (jsonError) {
-                const errorMsg = "Invalid JSON in request body.";
-                setError(errorMsg);
-                onResponse(null, errorMsg);
-                setLoading(false); // Ensure loading is set to false after error
-                return;
-            }
-        }
-        debugger
         try {
+            debugger
             const urlWithProxy = `/api/proxy?url=${url}`;
             let options = {
                 method: selectedMethod,
+                body: selectedMethod === 'POST' || selectedMethod === 'PUT' ? JSON.stringify(requestData) :
+                null, // Only include body for POST/PUT
                 headers: {
                     ...headers.reduce((acc, header) => {
                         if (header.key) {
@@ -108,12 +83,12 @@ export default function APIRequestComponent({onResponse, requestBody, inputs, se
                 }
             };
 
-
             if (['POST', 'PUT', 'PATCH'].includes(selectedMethod)) {
-                if (requestBody) {
+                
+                if (requestData) {
                     try {
-                        const requestData = JSON.parse(requestBody);
-                        options.body = JSON.stringify(requestData);
+                        const request = JSON.parse(requestData);
+                        options.body = JSON.stringify(request);
                     } catch (jsonError) {
                         const errorMsg = "Invalid JSON in request body.";
                         setError(errorMsg);
@@ -124,6 +99,7 @@ export default function APIRequestComponent({onResponse, requestBody, inputs, se
                 } else {
                     options.body = null; // Handle the case where there's no body.
                 }
+
             } else if (['GET', 'HEAD'].includes(selectedMethod)) {
                 delete options.body; // Remove the body
             }
@@ -175,7 +151,7 @@ export default function APIRequestComponent({onResponse, requestBody, inputs, se
 
 APIRequestComponent.propTypes = {
     onResponse: PropTypes.func.isRequired,
-    requestBody: PropTypes.string,
+    requestData: PropTypes.string,
     // headers: PropTypes.arrayOf(PropTypes.shape({
     //     key: PropTypes.string,
     //     value: PropTypes.string

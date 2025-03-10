@@ -34,7 +34,7 @@ export default async function handler(req, res) {
         const response = await axios(apiUrl, {
             method: method,
             httpsAgent: agent,
-            //  data,
+            data: data, // Include the request body for POST requests
             headers: headers
 
         });

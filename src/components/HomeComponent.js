@@ -1,4 +1,4 @@
-import React, { useState, useEffect  } from 'react';
+import React, { useState, useEffect } from 'react';
 import MenuComponent from './MenuComponent'; // Component for managing headers
 import UrlInputComponent from './UrlInputComponent'; // Component for API calls
 import ResponseBody from './Body/ResponseBodyComponent'; // Component for displaying the response
@@ -7,6 +7,7 @@ import Heading from './FormatUtilites/Format_Heading'; // Heading component for 
 import APIRequestComponent from './APIRequestComponent';
 import TabsComponent from './TabsComponent';
 import HeaderTab from './HeaderTabComponent'; // Import HeaderTabComponent
+import ParamsTab from './ParamsTabComponent';
 
 
 export default function HomeComponent() {
@@ -33,24 +34,42 @@ export default function HomeComponent() {
         headers: HeaderTab.headers // Initialize headers with the initial headerData
     });
 
-      // Synchronize inputs with headerData
-      useEffect(() => {
+    // Synchronize inputs with headerData
+    useEffect(() => {
+  
         setInputs((prev) => ({
             ...prev,
             headers: HeaderTab.headers
         })
-    
-    );
+
+        );
     }, [HeaderTab.headers]);
 
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
+    
         if (!inputs.url.trim()) {
             alert('Please provide a valid URL.');
             return;
         }
+        // Set to false, if submitted is true to avoid dups
+        if (inputs.submitted) {
+            setInputs((prev) => ({
+                ...prev,
+                submitted: false
+            }));
+        }
+
+        // Check if request body is required and not provided
+   
+        if (['POST', 'PUT', 'PATCH'].includes(inputs.method) && requestBody.trim() === ""   ) {
+            setLoading(false);
+            setErrorMessage("Request body is required for this method.");
+            setSubmitted(false); // Reset the submitted state
+            return;
+        }
+
         // Set to false, if submitted is true to avoid dups
         if (inputs.submitted) {
             setInputs((prev) => ({
@@ -74,7 +93,7 @@ export default function HomeComponent() {
             } finally {
                 setLoading(false);
             }
-        }, 0); 
+        }, 0);
     };
 
     // Callback function to handle API response from APIRequestComponent
@@ -89,15 +108,6 @@ export default function HomeComponent() {
         setLoading(false); // Ensure loading is set to false after response
     };
 
-    // Callback function to handle header changes from HeaderTabComponent
-    const handleHeaderButtonChange = (headerData
-    ) => {
-   
-       // setHeaderData(inputs.headers); // Update the headerData state
-        headers={headers} // Pass the latest headers from inputs to APIRequestComponent
-                  
-    };
-
     // Callback function to handle header changes from MenuComponent
     const handleMenuChange = (updatedMenu) => {
         console.log('Updated Menu:', updatedMenu); // Log updated headers for debugging
@@ -105,18 +115,16 @@ export default function HomeComponent() {
     };
 
     // Callback function to handle changes in the request body
-    const handleBodyChange = (e) => {
-        setRequestBody(e.target.value); // Update the request body state
+    const handleBodyChange = (requestData) => {
+        setRequestBody(requestData); // Update the request body state
     };
 
     return (
         <div className="flex">
             <div className="container mt-4">
                 <Heading level={2}>API Request Tool</Heading>
-                
-    
                 <MenuComponent onMenuChange={handleMenuChange} />
-                
+
                 <div>
                     <UrlInputComponent
                         inputs={inputs} setInputs={setInputs}
@@ -132,11 +140,11 @@ export default function HomeComponent() {
                 </div>
 
                 {/* Conditionally render RequestBodyComponent for methods that require a body */}
-                {['POST', 'PUT', 'PATCH'].includes(urlData.method) && (
+                {['POST', 'PUT', 'PATCH'].includes(inputs.method) && (
                     <div className='container border mt-4'>
                         <Heading level={5}>Enter a Request Body</Heading>
                         <RequestBodyComponent
-                            requestBody={requestBody}
+                            requestData={requestBody}
                             onBodyChange={handleBodyChange}
                         />
                     </div>
@@ -147,8 +155,8 @@ export default function HomeComponent() {
                     <Heading level={3}>API Response</Heading>  {/* Set a valid level value */}
                     <APIRequestComponent
                         onResponse={handleAPIResponse}
-                        requestBody={requestBody}
-                       // headers={handleHeaderButtonChange} // Pass the latest headers from inputs to APIRequestComponent
+                        requestData={requestBody}
+                        // headers={handleHeaderButtonChange} // Pass the latest headers from inputs to APIRequestComponent
                         inputs={inputs}
                         loading={loading} // Pass loading state to APIRequestComponent
                         setLoading={setLoading} // Pass setLoading function to APIRequestComponent

@@ -48,22 +48,6 @@ export default function HeaderTab({ headerData, onHeaderButtonChange }) {
         { key: 'Accept', value: HeaderData_json.accept, disabled: false },
     ]);
 
-    useEffect(() => {
-        // Load saved headers from user.json
-        const fetchHeaders = async () => {
-            try {
-                const response = await fetch(HeaderData_json);
-                const data = await response.json();
-                if (data.headers) {
-                    setHeaderButtonData(data.headers);
-                }
-            } catch (error) {
-                console.error('Error fetching headers:', error);
-            }
-        };
-    fetchHeaders();
-    }, []); // Run only once on mount
-
     
     const handleInputChange = (index, field, value) => {
  
@@ -74,6 +58,7 @@ export default function HeaderTab({ headerData, onHeaderButtonChange }) {
 
 
     useEffect(() => {
+        debugger;
         // Save to user.json when headers change
         const saveHeaders = async () => {
             try {
@@ -100,7 +85,7 @@ export default function HeaderTab({ headerData, onHeaderButtonChange }) {
 
     const addRow = () => {
         const newRow = { key: '', value: '', disabled: false };
-        setHeaderData([...headers, newRow]);
+        setHeaderButtonData([...headers, newRow]);
     };
 
     const deleteRow = (index) => {

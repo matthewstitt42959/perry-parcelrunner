@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';  // Importing PropTypes for prop validation
 import Heading from './FormatUtilites/Format_Heading'; 
-import Button from './FormatUtilites/Format_Button'; 
+import StandardButton from './FormatUtilites/Format_Button';
 
 export default function ParamsTab({ onParamChange }) {
     // Ensure onParamChange is a function, fallback to a no-op function
@@ -14,18 +14,29 @@ export default function ParamsTab({ onParamChange }) {
     ]);
 
     const handleInputChange = (index, field, value) => {
+       
         const newParamData = [...paramData];
         newParamData[index][field] = value;
         setParamData(newParamData);
+        handleParamChange(newParamData); // Notify parent immediately after updating state
     };
 
     const addRow = () => {
-        setParamData([...paramData, { key: '', value: '' }]);
-    }
+        const newParamData = [...paramData, { key: '', value: '' }];
+        setParamData(newParamData);
+        handleParamChange(newParamData); // Notify parent immediately after adding a row
+    };
+
+    const deleteRow = (index) => {
+        const newParamData = paramData.filter((_, i) => i !== index);
+        setParamData(newParamData);
+        handleParamChange(newParamData); // Notify parent immediately after deleting a row
+    };
 
     useEffect(() => {
         // Notify parent when paramData changes
         handleParamChange(paramData);
+        debugger
     }, [paramData, handleParamChange]);
 
     return (
@@ -42,6 +53,7 @@ export default function ParamsTab({ onParamChange }) {
                                     <tr>
                                         <th>Key</th>
                                         <th>Value</th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
 
@@ -49,27 +61,26 @@ export default function ParamsTab({ onParamChange }) {
                                     {paramData.map((row, index) => (
                                         <tr key={index}>
                                             <td>
-                                                <input
+                                                <input className='form-control'
                                                     type='text'
                                                     value={row.key}
                                                     onChange={(e) => handleInputChange(index, 'key', e.target.value)} />
                                             </td>
                                             <td>
-                                                <input
+                                                <input className='form-control'
                                                     type='text'
                                                     value={row.value}
                                                     onChange={(e) => handleInputChange(index, 'value', e.target.value)} />
+                                            </td>
+                                            <td>
+                                                <StandardButton text="Delete" onClick={() => deleteRow(index)} />
                                             </td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
 
-                            <Button 
-                                type="button"
-                                onClick={addRow}
-                            >Add Row</Button>
-                            {/* Need to add Remove row and select Checkbox row */}
+                            <StandardButton text="Add Row" onClick={addRow} />
                         </div>
                     </div>
                 </form>
@@ -80,5 +91,5 @@ export default function ParamsTab({ onParamChange }) {
 
 // Adding prop types for better validation
 ParamsTab.propTypes = {
-    onParamChange: PropTypes.func,
+    onParamChange: PropTypes.func.isRequired,
 };

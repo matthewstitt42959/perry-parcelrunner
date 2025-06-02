@@ -39,7 +39,11 @@ const config: Config = {
       },
       spacing: {
         button: '1rem 1.5rem', 
-      }
+        'btn-lg': '2rem 3rem', // Add larger button spacing
+      },
+      padding: {
+        'btn-lg': '1rem 2rem', // Add larger button padding
+      },
     },
   },
   plugins: [],

@@ -14,48 +14,24 @@ import HeaderData_json from '../lib/user.json'; // Import Authorization
 export default function APIRequestComponent({onResponse,  requestData, inputs, setLoading  }) {
     const [responseData, setResponseData] = useState(null); // State to manage response data
     const [error, setError] = useState(null); // State to manage error
-
-       // Initial header data
-       const [headers, setHeaders] = useState([
-        { key: 'Authorization', value: HeaderData_json.token },
-        { key: 'Cache-Control', value: HeaderData_json.cacheControl },
-        { key: 'Content-Type', value: HeaderData_json.contentType},
-        { key: 'Accept', value: HeaderData_json.accept },
-    ]);
    
 
     useEffect(() => {
      
         if (inputs.submitted) {
+            setLoading(true);
             setError(null);
             setResponseData(null);
             handleSend(inputs.url, inputs.method, requestData);
         }
-    }, [inputs, requestData, headers]); // Add required dependencies
+    }, [inputs, requestData]); // Add required dependencies
 
-    // Function to construct the full API URL with query parameters
-    const constructURL = (url, queryParam) => {
-
-        // Validate the URL
-        if (!url) {
-            const errorMsg = "Invalid URL.";
-            setError(errorMsg);
-            onResponse(null, errorMsg);
-            return;
-        }
-        const queryString = new URLSearchParams(queryParam).toString();
-        console.log("constructURL Called!!!"); 
-        return queryString ? `${url}?${queryString}` : url;
-
-    };
 
     const handleSend = async (url, selectedMethod, requestData) => {
-        debugger
-        console.log('handleSend Called!!!')
 
         /**
          * Essential items to send for API request
-         * URL - Should be String
+         * URL - Should be String and should be combined with the params at this point
          * Method - Should be String
          * Headers - Should be a List of Objects
          * Request Body (for POST, PUT, PATCH) - Should be a JSON
@@ -63,13 +39,11 @@ export default function APIRequestComponent({onResponse,  requestData, inputs, s
         setError(null);
         setResponseData(null)
 
-        // Construct the full URL with query parameters
-       // const fullURL = constructURL(url, inputs.parameters_list);
+  
 
         try {
-            debugger
-            const urlWithProxy = `/api/proxy?url=${url}`;
-            let options = {
+           
+             let options = {
                 method: selectedMethod,
                 body: selectedMethod === 'POST' || selectedMethod === 'PUT' ? JSON.stringify(requestData) :
                 null, // Only include body for POST/PUT

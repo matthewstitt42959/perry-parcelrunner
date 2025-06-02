@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import Heading from './FormatUtilites/Format_Heading';
-import Button from './FormatUtilites/Format_Button';
+import StandardButton from './FormatUtilites/Format_Button';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '@windmill/react-ui';
 import HeaderData_json from '../lib/user.json'; // Import Authorization
+import { toast } from 'react-toastify';
 
 const HeaderRow = ({ row, index, handleInputChange, handleCheckboxChange, deleteRow }) => (
     <TableRow key={index} style={{ backgroundColor: row.disabled ? 'lightgray' : 'transparent' }}>
@@ -33,12 +34,13 @@ const HeaderRow = ({ row, index, handleInputChange, handleCheckboxChange, delete
             {/* Invert checkbox behavior to represent enabled state */}
         </TableCell>
         <TableCell>
-            <Button type='button' onClick={() => deleteRow(index)}>X</Button>
+        <StandardButton text="Delete" onClick={()=> deleteRow(index)} />
+       
         </TableCell>
     </TableRow>
 );
 
-export default function HeaderTab({ headerData, onHeaderButtonChange }) {
+export default function HeaderTab({ onHeaderButtonChange }) {
 
     // Initial header data
     const [headers, setHeaderButtonData] = useState([
@@ -48,49 +50,65 @@ export default function HeaderTab({ headerData, onHeaderButtonChange }) {
         { key: 'Accept', value: HeaderData_json.accept, disabled: false },
     ]);
 
-    
-    const handleInputChange = (index, field, value) => {
- 
-        const updatedData = [...headers]; 
-        updatedData[index][field] = value; 
-        setHeaderButtonData(updatedData);
+    // Function to fetch headers from user.json
+    const fetchHeaders = async () => {
+        try {
+            const response = await fetch('/api/getHeaders');
+            const data = await response.json();
+            setHeaderButtonData(data.headers);
+        } catch (error) {
+            console.error('Error fetching headers:', error);
+        }
     };
 
-
     useEffect(() => {
-        debugger;
-        // Save to user.json when headers change
-        const saveHeaders = async () => {
-            try {
-                await fetch(HeaderData_json, {
-                        headers: {
-                        'Content-Type': 'application/json',
-                    },
-                  //  body: JSON.stringify({ headers: headers }),
-                });
-            } catch (error) {
-                console.error('Error saving headers:', error);
-            }
-        };
-        saveHeaders();
-    }, [headers]);
+        fetchHeaders();
+    }, []);
 
+    const handleInputChange = (index, key, value) => {
+        const updatedData = [...headers];
+        updatedData[index][key] = value;
+        setHeaderButtonData(updatedData);
+        saveHeaders(updatedData); // Save headers when input changes
+   
+    };
+    const saveHeaders = async (updatedHeaders) => {
+        try {
+            await fetch('/api/saveHeaders', {
+                method: 'POST',
+                body: JSON.stringify({ headers: updatedHeaders }),
+                headers: {
+                    "Content-Type": "application/json",
+                }
+            });
+            toast.success('Headers saved successfully!');
+            console.log('Headers saved successfully!', headers);
+        } catch (error) {
+            console.error('Error saving headers:', error);
+            toast.error('Failed to save headers.');
+        }
+    };
 
     const handleCheckboxChange = (index) => {
         const newHeaderData = [...headers];
         newHeaderData[index].disabled = !newHeaderData[index].disabled;
         // Toggle the disable state
-        // setHeaderData(newHeaderData);
+         setHeaderButtonData(newHeaderData); //Update the state
+         saveHeaders(newHeaderData); //Save headers when checkbox is toggled
     };
 
     const addRow = () => {
         const newRow = { key: '', value: '', disabled: false };
-        setHeaderButtonData([...headers, newRow]);
+        const updatedHeaders = [...headers, newRow];
+        setHeaderButtonData(updatedHeaders);
+        saveHeaders(updatedHeaders); // Save headers when a new row is added
     };
 
     const deleteRow = (index) => {
         const newHeaderData = headers.filter((_, i) => i !== index);
-        // setHeaderData(newHeaderData);
+        setHeaderButtonData(newHeaderData);
+        saveHeaders(newHeaderData); // Save headers when a row is deleted
+    
     };
 
 
@@ -119,13 +137,8 @@ export default function HeaderTab({ headerData, onHeaderButtonChange }) {
                     ))}
                 </TableBody>
             </Table>
-            <Button
-                type='button'
-                className="text-white bg-blue-500 hover:bg-blue-700"
-                onClick={addRow}
-            >
-                Add Row
-            </Button>
+            <StandardButton text="Add Row" onClick={addRow} />
+    
         </div>
     );
 }

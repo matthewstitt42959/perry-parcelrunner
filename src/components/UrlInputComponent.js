@@ -16,6 +16,7 @@ export default function UrlInputComponent({ inputs, setInputs, loading, sendRequ
     // Handle input change events for both URL and method
     const handleUrlChange = (event) => {
         setInputs((prev) => ({ ...prev, url: event.target.value }));
+        debugger
     }
 
     // Handle input change events for both URL and method

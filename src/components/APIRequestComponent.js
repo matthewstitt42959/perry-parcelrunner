@@ -15,6 +15,14 @@ export default function APIRequestComponent({onResponse,  requestData, inputs, s
     const [responseData, setResponseData] = useState(null); // State to manage response data
     const [error, setError] = useState(null); // State to manage error
    
+       // Initial header data
+       const [headers, setHeaders] = useState([
+        { key: 'Authorization', value: HeaderData_json.token },
+        { key: 'Cache-Control', value: HeaderData_json.cacheControl },
+        { key: 'Content-Type', value: HeaderData_json.contentType},
+        { key: 'Accept', value: HeaderData_json.accept },
+    ]);
+   
 
     useEffect(() => {
      
@@ -42,7 +50,7 @@ export default function APIRequestComponent({onResponse,  requestData, inputs, s
   
 
         try {
-           
+          const urlWithProxy = `/api/proxy?url=${url}`;
              let options = {
                 method: selectedMethod,
                 body: selectedMethod === 'POST' || selectedMethod === 'PUT' ? JSON.stringify(requestData) :

@@ -8,22 +8,17 @@ import APIRequestComponent from './APIRequestComponent';
 import TabsComponent from './TabsComponent';
 import HeaderTab from './HeaderTabComponent'; // Import HeaderTabComponent
 import ParamsTab from './ParamsTabComponent';
+import { Button } from '@windmill/react-ui';
 
 
 export default function HomeComponent() {
-    const [urlData, setUrlData] = useState({ URL: ' ', method: 'GET' });
     const [queryParams, setQueryParams] = useState([]); // Initialize as an array
     const [body, setBody] = useState('');
     const [responseData, setResponseData] = useState(null); // State for API response data
     const [errorMessage, setErrorMessage] = useState(null); // State for error messages
     const [requestBody, setRequestBody] = useState(''); // State for request body
-    const [submitted, setSubmitted] = useState(false); // Track if send button is pressed
-    const [activeTab, setActiveTab] = useState('tab1'); // State for the active tab
     const [loading, setLoading] = useState('');
-    const [status, setStatus] = useState('');
-    const [showHeaders, setShowHeaders] = useState(false); // State to track if Headers button is clicked
-
-
+    const [activeTab, setActiveTab] = useState('tab1'); // State for the active tab
 
 
     // Function to handle submission from UrlInputComponent
@@ -35,43 +30,29 @@ export default function HomeComponent() {
         params: queryParams // Initialize params with the initial queryParams
     });
 
-    // Synchronize inputs with headerData
-    useEffect(() => {
-
-        setInputs((prev) => ({
-            ...prev,
-            headers: HeaderTab.headers,
-            params: queryParams
-        }));
-        debugger
-    }, [HeaderTab.headers, queryParams]);
-
-    // Update URL field in real-time based on parameters entered
+    // Sync inputs with query parameters
     useEffect(() => {
         const urlWithParams = constructURLWithParams(inputs.url, queryParams);
-        setInputs((prev) => ({
-            ...prev,
-            url: urlWithParams
-        }));
-        debugger
-    }, [queryParams]);
+        setInputs(prev => ({ ...prev, url: urlWithParams, params: queryParams }));
+    }, [queryParams]); // Dependency on queryParams only
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setLoading(true);
+  
 
         if (!inputs.url.trim()) {
             alert('Please provide a valid URL.');
             return;
         }
 
-        // Check if request body is required and not provided
 
         if (['POST', 'PUT', 'PATCH'].includes(inputs.method) && requestBody.trim() === '') {
-            setLoading(false);
-            setErrorMessage("Request body is required for this method.");
-            setSubmitted(false); // Reset the submitted state
+                setErrorMessage("Request body is required for this method.");
             return;
         }
+
+        setLoading(true);
        
         // Set to false, if submitted is true to avoid dups
         if (inputs.submitted) {
@@ -104,6 +85,7 @@ export default function HomeComponent() {
                 setLoading(false);
             }
         }, 0);
+        sendRequest(e); // Pass the event object to sendRequest
     };
 
     // Callback function to handle API response from APIRequestComponent
@@ -157,6 +139,10 @@ export default function HomeComponent() {
                         setLoading={setLoading} // Pass setLoading function to UrlInputComponent
                     />
                 </div>
+                                {/* Button to trigger the send */}
+                <Button type="submit" className="btn btn-primary" disabled={loading}>
+                    {loading ? 'Loading...' : 'Send'}
+                </Button>
 
                 {/* Render the tabbed interface */}
                 <div className='container border mt-4'>
@@ -173,6 +159,7 @@ export default function HomeComponent() {
                         />
                     </div>
                 )}
+
 
 
                 {/* Render the API response and error messages */}

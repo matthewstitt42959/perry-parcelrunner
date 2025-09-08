@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
-import { Button } from '@windmill/react-ui';
 
 /**
  * UrlInputComponent allows users to input a URL, select an HTTP method,
  * and sends requests based on the input.
  *
- * @param {function} sendRequest - Function to handle sending requests.
  */
 export default function UrlInputComponent({ inputs, setInputs, loading, sendRequest, setLoading }) {
 
@@ -15,49 +13,22 @@ export default function UrlInputComponent({ inputs, setInputs, loading, sendRequ
 
     // Handle input change events for both URL and method
     const handleUrlChange = (event) => {
-        setInputs((prev) => ({ ...prev, url: event.target.value }));
-        debugger
-    }
+        const newUrl = event.target?.value; // Adding optional chaining
+        if (newUrl !== undefined) {
+            setInputs((prev) => ({ ...prev, url: newUrl }));
+            console.log("URL changed:", newUrl); // Debugging line
+            handleUrlChange(newUrl); // Call the onUrlChange prop to update HomeComponent
+        }
+    };
 
     // Handle input change events for both URL and method
     const handleMethodChange = (event) => {
         setInputs((prev) => ({ ...prev, method: event.target.value }));
     }
 
-    // const handlePasteEvent = (event) => {
-    //     const pastedData = event.clipboardData.getData('text');
-    //     if (isValidUrl(pastedData)) {
-    //         // Update URL state and lift to parent if valid
-    //         setInputs((prev) => ({ ...prev, url: formatUrl(pastedData) }));
-    //     } else {
-    //         event.preventDefault(); // Prevent invalid URL from being pasted
-    //         alert('Invalid URL pasted');
-    //     }
-    // };
-
-    const isValidUrl = (url) => {
-        try {
-            new URL(url);
-            return true;
-        } catch {
-            return false;
-        }
-    };
-
-    const formatUrl = (urlString) => {
-        const parsedURL = new URL(urlString);
-        return `${parsedURL.protocol}//${parsedURL.hostname}${parsedURL.pathname}`;
-    };
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        setLoading(true);
-        sendRequest(e); // Pass the event object to sendRequest
-    }
-
     return (
         <>
-            <form className='input-group mb-4' onSubmit={handleSubmit}>
+            <form className='input-group mb-4'>
                 <select className="form-select flex-grow-0 w-auto"
                     id="selectedMethod"
                     value={inputs.method}
@@ -76,11 +47,6 @@ export default function UrlInputComponent({ inputs, setInputs, loading, sendRequ
                     onChange={handleUrlChange}
                   //  onPaste={handlePasteEvent}
                     placeholder="https://example.com" />
-
-                {/* Button to trigger the send */}
-                <Button type="submit" className="btn btn-primary" disabled={loading}>
-                    {loading ? 'Loading...' : 'Send'}
-                </Button>
                 
             </form>
         </>

@@ -1,6 +1,6 @@
 ### conversion of .js app to React
 # reformat/rename script.js to index.js and change to support React
-
+## Changed name to Perry ParcelRunner
 
 
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).

@@ -16,9 +16,12 @@ export default function HomePage() {
         <meta charSet="UTF-8" />
         <meta httpEquiv="X-UA-Compatible" content="Chrome" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-        <title>Mock Postman</title>
+        <title>Perry ParcelRunner</title>
+     
       </Head>
+
+         <header><h3><i>Lightweight API Delivery with Postal Precision</i></h3></header>
+
       <React.StrictMode>
         <HomeComponent />           {/* Render the tabbed interface */}
 

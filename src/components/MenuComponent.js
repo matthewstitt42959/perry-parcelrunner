@@ -23,9 +23,7 @@ export default function MenuComponent() {
         </header>
         <div>
                         <ul>
-                <label className='mr-4 text-left flex-shrink-0'>
-                    <i>Todo: Use the Header to offer pre-selected URL host and Body</i>
-                </label>
+
             </ul>
         </div>
         </div>

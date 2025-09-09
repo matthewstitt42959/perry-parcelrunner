@@ -17,7 +17,7 @@ export default function HomeComponent() {
     const [responseData, setResponseData] = useState(null); // State for API response data
     const [errorMessage, setErrorMessage] = useState(null); // State for error messages
     const [requestBody, setRequestBody] = useState(''); // State for request body
-    const [loading, setLoading] = useState('');
+    const [loading, setLoading] = useState(false); // State for loading indicator
     const [activeTab, setActiveTab] = useState('tab1'); // State for the active tab
 
 
@@ -26,132 +26,100 @@ export default function HomeComponent() {
         url: '',
         method: 'GET',
         submitted: false,
-        headers: HeaderTab.headers, // Initialize headers with the initial headerData
         params: queryParams // Initialize params with the initial queryParams
     });
 
-    // Sync inputs with query parameters
-    useEffect(() => {
-        const urlWithParams = constructURLWithParams(inputs.url, queryParams);
-        setInputs(prev => ({ ...prev, url: urlWithParams, params: queryParams }));
-    }, [queryParams]); // Dependency on queryParams only
+       const handleSubmit = async (e) => {
+        e.preventDefault(); // Prevent default form submission behavior
+        setErrorMessage(null); // Clear previous error messages
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-  
-
-        if (!inputs.url.trim()) {
-            alert('Please provide a valid URL.');
+        if (!inputs.url || !inputs.url.trim()) {
+            setErrorMessage("Please enter a valid URL.");
             return;
         }
 
-
-        if (['POST', 'PUT', 'PATCH'].includes(inputs.method) && requestBody.trim() === '') {
-                setErrorMessage("Request body is required for this method.");
+        if (['POST', 'PUT', 'PATCH'].includes(inputs.method) && !requestBody.trim()) {
+            setErrorMessage("Request body is required for this method.");
             return;
         }
 
+        // Build the final URL with latest params
+        const finalUrl = constructURLWithParams(inputs.url, queryParams);
+
         setLoading(true);
-       
-        // Set to false, if submitted is true to avoid dups
-        if (inputs.submitted) {
-            setInputs((prev) => ({
-                ...prev,
-                submitted: false
-            }));
-        }
-
-        // Construct the URL with query parameters
-        const urlWithParams = constructURLWithParams(inputs.url, queryParams);
-
-
-
-        // Update submitted to true and then send to API request component
-        setTimeout(() => {
-            setInputs((prev) => ({
-                ...prev,
-                url: urlWithParams,
-                method: inputs.method || "GET",
-                submitted: true
-            }));
-            setLoading(true);
-
-            try {
-                // API request will be handled by APIRequestComponent
-            } catch (error) {
-                // Handle error
-            } finally {
-                setLoading(false);
-            }
-        }, 0);
-        sendRequest(e); // Pass the event object to sendRequest
+        setInputs((prev) => ({
+            ...prev,
+            url: finalUrl,
+            method: inputs.method || "GET",
+            submitted: true
+        }));
     };
 
-    // Callback function to handle API response from APIRequestComponent
+    // APIRequestComponent callback
     const handleAPIResponse = (data, method, error = null) => {
         if (error) {
-            setErrorMessage(error); // Set error message if there's an error
-            setResponseData(null); // Clear previous response data
+            setErrorMessage(error);
+            setResponseData(null);
         } else {
-            setResponseData(data); // Set the response data
-            setErrorMessage(null); // Clear error message
+            setResponseData(data);
+            setErrorMessage(null);
         }
-        setLoading(false); // Ensure loading is set to false after response
+        setLoading(false); // stop spinner once child finishes
+        setInputs(prev => ({ ...prev, submitted: false })); // reset submitted flag
     };
 
-    // Callback function to handle header changes from MenuComponent
+    // If you want MenuComponent to update headers later, wire a real setter:
     const handleMenuChange = (updatedMenu) => {
-        console.log('Updated Menu:', updatedMenu); // Log updated headers for debugging
-        setHeaderData(updatedMenu); // Update header data state
+        console.log('Updated Menu:', updatedMenu);
+        // setHeaderData(updatedMenu);
+        // setInputs(prev => ({ ...prev, headers: updatedMenu, submitted: false }));
     };
 
-    // Callback function to handle changes in the request body
-    const handleBodyChange = (requestData) => {
-        setRequestBody(requestData); // Update the request body state
-    };
+    const handleBodyChange = (requestData) => setRequestBody(requestData);
+    const handleParamChange = (params) => setQueryParams(params);
 
-    const handleParamChange = (params) => {
-         debugger
-        setQueryParams(params); // Update the query parameters state
-    };
+    // Builds URL+params safely (respects existing ? or &)
+    function constructURLWithParams(url, params) {
+        if (!url) return '';
+        const usable = (params || []).filter(p => p?.key && p?.value);
+        if (usable.length === 0) return url;
 
-    const constructURLWithParams = (url, params) => {
-        debugger    
-        const queryString = params
-            .filter(param => param.key && param.value)
-            .map(param => `${encodeURIComponent(param.key)}=${encodeURIComponent(param.value)}`)
+        const qs = usable
+            .map(p => `${encodeURIComponent(p.key)}=${encodeURIComponent(p.value)}`)
             .join('&');
-        return queryString ? `${url}?${queryString}` : url;
-    };
+
+        return url.includes('?') ? `${url}&${qs}` : `${url}?${qs}`;
+    }
 
     return (
-        <div className="flex, home-container">
+        <div className="flex home-container">
             <div className="container mt-4">
                 <Heading level={2}>API Request Tool</Heading>
+
                 <MenuComponent onMenuChange={handleMenuChange} />
 
-                <div>
+                <div className="flex gap-2 items-center w-full mt-2">
                     <UrlInputComponent
-                        inputs={inputs} setInputs={setInputs}
-                        sendRequest={handleSubmit}
-                        loading={loading} // Pass loading state for button disabling
-                        setLoading={setLoading} // Pass setLoading function to UrlInputComponent
+                        inputs={inputs}
+                        setInputs={setInputs}
+                        loading={loading}
                     />
+                    <button
+                        type="button"
+                        className="btn btn-primary"
+                        disabled={loading}
+                        onClick={handleSubmit}
+                    >
+                        {loading ? 'Loading…' : 'Send'}
+                    </button>
                 </div>
-                                {/* Button to trigger the send */}
-                <Button type="submit" className="btn btn-primary" disabled={loading}>
-                    {loading ? 'Loading...' : 'Send'}
-                </Button>
 
-                {/* Render the tabbed interface */}
-                <div className='container border mt-4'>
+                <div className="container border mt-4">
                     <TabsComponent activeTab={activeTab} setActiveTab={setActiveTab} />
                 </div>
 
-                {/* Conditionally render RequestBodyComponent for methods that require a body */}
                 {['POST', 'PUT', 'PATCH'].includes(inputs.method) && (
-                    <div className='container border mt-4'>
+                    <div className="container border mt-4">
                         <Heading level={5}>Enter a Request Body</Heading>
                         <RequestBodyComponent
                             requestData={requestBody}
@@ -160,17 +128,15 @@ export default function HomeComponent() {
                     </div>
                 )}
 
+                <div className="border mt-4">
+                    <Heading level={3}>API Response</Heading>
 
-
-                {/* Render the API response and error messages */}
-                <div className='border mt-4'>
-                    <Heading level={3}>API Response</Heading>  {/* Set a valid level value */}
                     <APIRequestComponent
                         onResponse={handleAPIResponse}
                         requestData={requestBody}
                         inputs={inputs}
-                        loading={loading} // Pass loading state to APIRequestComponent
-                        setLoading={setLoading} // Pass setLoading function to APIRequestComponent
+                        loading={loading}
+                        setLoading={setLoading}
                     />
 
                     <ResponseBody responseData={responseData} />

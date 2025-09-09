@@ -35,79 +35,92 @@ export default function APIRequestComponent({onResponse,  requestData, inputs, s
     }, [inputs, requestData]); // Add required dependencies
 
 
-    const handleSend = async (url, selectedMethod, requestData) => {
+    const handleSend = async (url, selectedMethod, reqData) => {
+    try {
+      // 1) ALWAYS encode the upstream URL in the proxy query param
+      const urlWithProxy = `/api/proxy?url=${encodeURIComponent(url)}`;
 
-        /**
-         * Essential items to send for API request
-         * URL - Should be String and should be combined with the params at this point
-         * Method - Should be String
-         * Headers - Should be a List of Objects
-         * Request Body (for POST, PUT, PATCH) - Should be a JSON
-         *  */
-        setError(null);
-        setResponseData(null)
+      // 2) Build headers object from your array
+      const baseHeaders = headers.reduce((acc, h) => {
+        if (h.key && h.value != null && String(h.value).length > 0) acc[h.key] = h.value;
+        return acc;
+      }, {});
 
-  
-
-        try {
-          const urlWithProxy = `/api/proxy?url=${url}`;
-             let options = {
-                method: selectedMethod,
-                body: selectedMethod === 'POST' || selectedMethod === 'PUT' ? JSON.stringify(requestData) :
-                null, // Only include body for POST/PUT
-                headers: {
-                    ...headers.reduce((acc, header) => {
-                        if (header.key) {
-                            acc[header.key] = header.value;
-                        }
-                        return acc;
-                    }, {}),
-                }
-            };
-
-            if (['POST', 'PUT', 'PATCH'].includes(selectedMethod)) {
-                
-                if (requestData) {
-                    try {
-                        const request = JSON.parse(requestData);
-                        options.body = JSON.stringify(request);
-                    } catch (jsonError) {
-                        const errorMsg = "Invalid JSON in request body.";
-                        setError(errorMsg);
-                        onResponse(null, errorMsg);
-                        setLoading(false); // Ensure loading is set to false after error
-                        return;
-                    }
-                } else {
-                    options.body = null; // Handle the case where there's no body.
-                }
-
-            } else if (['GET', 'HEAD'].includes(selectedMethod)) {
-                delete options.body; // Remove the body
-            }
-
-            let response = await fetchWithTimeout(urlWithProxy, options, 5000);
-            const contentType = response.headers.get("content-type");
-
-            let data;
-            if (contentType && contentType.includes("application/json")) {
-                data = await response.json();
-            } else {
-                data = await response.text();
-            }
-
-            setResponseData(data);
-            onResponse(data, selectedMethod); // Call onResponse with data and selectedMethod
-
-        } catch (error) {
-            const errorMsg = `An error occurred: ${error.message}`;
-            console.error('Error fetching data: ', errorMsg);
-            setError(errorMsg);
-            onResponse(null, errorMsg); // Call onResponse with null and errorMsg
-        } finally{
-            setLoading(false); 
+      // 3) Forward Authorization *as-is*; if it’s a bare JWT, add Bearer automatically
+      if (baseHeaders.Authorization && !/^Bearer\s/i.test(baseHeaders.Authorization)) {
+        // naive JWT check: three dot-separated chunks
+        if (baseHeaders.Authorization.split('.').length === 3) {
+          baseHeaders.Authorization = `Bearer ${baseHeaders.Authorization}`;
         }
-    };
+      }
+
+      const method = (selectedMethod || 'GET').toUpperCase();
+
+      // 4) Prepare body only for methods that support it
+      let body;
+      if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+        if (reqData) {
+          if (typeof reqData === 'string') {
+            // If string, make sure it's valid JSON
+            try {
+              const parsed = JSON.parse(reqData);
+              body = JSON.stringify(parsed);
+            } catch {
+              const errorMsg = 'Invalid JSON in request body.';
+              setError(errorMsg);
+              onResponse(null, errorMsg);
+              setLoading(false);
+              return;
+            }
+          } else {
+            // If it's already an object
+            body = JSON.stringify(reqData);
+          }
+        }
+        // Ensure Content-Type when we have a body and it’s not already set
+        if (body && !Object.keys(baseHeaders).some(k => k.toLowerCase() === 'content-type')) {
+          baseHeaders['Content-Type'] = 'application/json';
+        }
+      } else {
+        // GET/HEAD → no body and don’t force a content-type
+        body = undefined;
+        // Strip Content-Type if present (some APIs behave oddly)
+        for (const k of Object.keys(baseHeaders)) {
+          if (k.toLowerCase() === 'content-type') delete baseHeaders[k];
+        }
+      }
+
+      // 5) Longer timeout to match server axios timeout (15s)
+      const response = await fetchWithTimeout(
+        urlWithProxy,
+        {
+          method,
+          headers: baseHeaders,
+          body,
+        },
+        15000
+      );
+
+      const contentType = response.headers.get('content-type') || '';
+      let data;
+      if (contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        data = await response.text();
+      }
+
+      setResponseData(data);
+      onResponse(data, method);
+    } catch (err) {
+      const errorMsg = `An error occurred: ${err.message}`;
+      console.error('Error fetching data:', errorMsg);
+      setError(errorMsg);
+      onResponse(null, errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
     const fetchWithTimeout =(url, options, timeout = 5000) => {
  

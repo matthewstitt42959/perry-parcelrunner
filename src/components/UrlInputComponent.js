@@ -5,50 +5,41 @@ import React, { useState } from 'react';
  * and sends requests based on the input.
  *
  */
-export default function UrlInputComponent({ inputs, setInputs, loading, sendRequest, setLoading }) {
+export default function UrlInputComponent({ inputs, setInputs, loading }) {
 
-    const [selectedMethod, setSelectedMethod] = useState('GET');
-    const [status, setStatus] = useState('');
-    const [submitted, setSubmitted] = useState(false);
+    const handleUrlChange = (e) =>
+        setInputs(prev => ({ ...prev, url: e.target.value, submitted: false }));
 
-    // Handle input change events for both URL and method
-    const handleUrlChange = (event) => {
-        const newUrl = event.target?.value; // Adding optional chaining
-        if (newUrl !== undefined) {
-            setInputs((prev) => ({ ...prev, url: newUrl }));
-            console.log("URL changed:", newUrl); // Debugging line
-            handleUrlChange(newUrl); // Call the onUrlChange prop to update HomeComponent
-        }
-    };
+    const handleMethodChange = (e) =>
+        setInputs(prev => ({ ...prev, method: e.target.value, submitted: false }));
 
-    // Handle input change events for both URL and method
-    const handleMethodChange = (event) => {
-        setInputs((prev) => ({ ...prev, method: event.target.value }));
-    }
 
-    return (
-        <>
-            <form className='input-group mb-4'>
-                <select className="form-select flex-grow-0 w-auto"
-                    id="selectedMethod"
-                    value={inputs.method}
-                    onChange={handleMethodChange}>
-                    <option value="GET">GET</option>
-                    <option value="POST">POST</option>
-                    <option value="PUT">PUT</option>
-                    <option value="PATCH">PATCH</option>
-                    <option value="DELETE">DELETE</option>
-                </select>
+     return (
+    <div className="flex gap-2 items-center w-full">
+      <select
+        className="form-select w-auto"
+        value={inputs.method || 'GET'}
+        onChange={handleMethodChange}
+        disabled={loading}
+      >
+        <option value="GET">GET</option>
+        <option value="POST">POST</option>
+        <option value="PUT">PUT</option>
+        <option value="PATCH">PATCH</option>
+        <option value="DELETE">DELETE</option>
+        <option value="HEAD">HEAD</option>
+      </select>
 
-                {/* Input field */}
-                <input required className="form-control"
-                    type="text"
-                    value={inputs.url || ""}
-                    onChange={handleUrlChange}
-                  //  onPaste={handlePasteEvent}
-                    placeholder="https://example.com" />
-                
-            </form>
-        </>
-    );
+      <input
+        required
+        className="form-control flex-grow"
+        type="text"
+        value={inputs.url || ''}
+        onChange={handleUrlChange}
+        placeholder="https://example.com"
+        disabled={loading}
+      />
+
+      </div>
+  );
 }

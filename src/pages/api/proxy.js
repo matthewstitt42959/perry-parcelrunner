@@ -1,64 +1,78 @@
+// src/pages/api/proxy.js
 import axios from 'axios';
 import https from 'https';
 import fs from 'fs';
+import tls from 'tls';
 
-process.env.NODE_EXTRA_CA_CERTS = 'C:/Users/266833/Documents/Workplace/certificate/cacert.pem';
+// --- Load your extra CA once, but APPEND to Node's default roots ---
+const CUSTOM_CA_PATH = 'C:/Users/266833/Documents/Workplace/certificate/cacert.pem';
+const extraCA = fs.existsSync(CUSTOM_CA_PATH) ? fs.readFileSync(CUSTOM_CA_PATH) : null;
+
+const httpsAgent = new https.Agent({
+    rejectUnauthorized: true,
+    ca: extraCA ? [...tls.rootCertificates, extraCA] : tls.rootCertificates,
+});
+
+// Hop-by-hop headers we should NOT forward
+const HOP = new Set([
+    'host',
+    'connection',
+    'keep-alive',
+    'proxy-authenticate',
+    'proxy-authorization',
+    'te',
+    'trailer',
+    'transfer-encoding',
+    'upgrade',
+    'content-length',
+    'x-forwarded-host',
+    'x-forwarded-proto',
+    'x-forwarded-for'
+]);
 
 export default async function handler(req, res) {
-    const apiUrl = req.query.url; // Retrieve the API URL from the query parameters
-    const authorizationHeader = req.headers.authorization; // Capture the incoming authorization header
-
-    // Validate the API URL
-    if (!apiUrl) {
-        return res.status(400).json({ error: 'No URL provided' });
-    }
-
-    console.log('Authorization:', authorizationHeader); // Log the API URL for debugging
-    const ca = fs.readFileSync(process.env.NODE_EXTRA_CA_CERTS); // Load the CA certificate
-    const agent = new https.Agent({ ca, rejectUnauthorized: true });
-
-    const method = req.method; // Determine the HTTP method (GET, POST, etc.)
-    const data = method === 'POST' ? req.body : null; // Set the request body for POST requests
-
-    // Prepare headers for the API request 
-    const headers = {
-        ...req.header,
-        Authorization: `Bearer ${authorizationHeader}`, // Add the Authorization header explicitly
-    };
-
-
-    console.log('Request headers to be sent:', headers); // Log headers for debugging
+    const apiUrl = req.query.url;
+    if (!apiUrl) return res.status(400).json({ error: 'No URL provided' });
 
     try {
-        // Make the request to the external API
-        const response = await axios(apiUrl, {
-            method: method,
-            httpsAgent: agent,
-            data: data, // Include the request body for POST requests
-            headers: headers
+        // Build outbound headers (copy most inbound headers, but sanitize a few)
+        const headers = {};
+        for (const [k, v] of Object.entries(req.headers || {})) {
+            const key = k.toLowerCase();
+            if (!HOP.has(key)) headers[key] = v;
+        }
+        // Forward Authorization exactly as-is (don't prepend "Bearer ")
+        if (req.headers.authorization) headers.authorization = req.headers.authorization;
 
+        const method = (req.method || 'GET').toUpperCase();
+        const hasBody = !(method === 'GET' || method === 'HEAD');
+
+        const upstream = await axios({
+            url: apiUrl,
+            method,
+            httpsAgent,
+            headers,
+            data: hasBody ? req.body : undefined,
+            timeout: 15000,
+            // Let us pass through whatever status the upstream returns
+            validateStatus: () => true
         });
 
-        // Log the response headers for debugging
-        console.log('Response headers received:', response.headers);
-
-
-        return res.status(200).json(response.data); // Return the response from the API
-    } catch (error) {
-        console.error('Error in proxy request: ', error.message); // Log the error message
-
-        // Handle different error scenarios
-        if (error.response) {
-            console.error('Axios Response Error: ', error.response.status);
-            return res.status(error.response.status).json({
-                error: error.response.data || `External API error: ${error.response.status}`,
-            });
-        } else if (error.request) {
-            console.error('No response received from the external API: ', error.request);
-            return res.status(502).json({ error: 'No response received from the external API' });
-        } else {
-            console.error('Error setting up the request: ', error.message);
-            return res.status(500).json({ error: `Internal Server Error: ${error.message}` });
+        // Pass through status and JSON/text (Axios already parsed JSON by default)
+        // If you expect binary, switch to responseType:'arraybuffer' + res.send(Buffer.from(...))
+        // Also avoid forwarding hop-by-hop response headers
+        for (const [k, v] of Object.entries(upstream.headers || {})) {
+            const key = k.toLowerCase();
+            if (!['transfer-encoding', 'connection'].includes(key)) {
+                try { res.setHeader(key, v); } catch { }
+            }
         }
+
+        return res.status(upstream.status).send(upstream.data);
+    } catch (err) {
+        // Keep this short and clear
+        const status = err?.response?.status ?? (err?.code === 'ECONNABORTED' ? 504 : 502);
+        const msg = err?.message || 'Bad gateway';
+        return res.status(status).json({ error: msg });
     }
 }

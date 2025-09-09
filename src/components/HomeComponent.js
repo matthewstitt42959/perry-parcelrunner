@@ -1,24 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import MenuComponent from './MenuComponent'; // Component for managing headers
-import UrlInputComponent from './UrlInputComponent'; // Component for API calls
-import ResponseBody from './Body/ResponseBodyComponent'; // Component for displaying the response
 import RequestBodyComponent from './Body/RequestBodyComponent'; // Component for editing request body
-import Heading from './FormatUtilites/Format_Heading'; // Heading component for titles
-import APIRequestComponent from './APIRequestComponent';
 import TabsComponent from './TabsComponent';
-import HeaderTab from './HeaderTabComponent'; // Import HeaderTabComponent
-import ParamsTab from './ParamsTabComponent';
-import { Button } from '@windmill/react-ui';
-
+import ResponsePanel from './Body/RequestPanel';
+import APIRequestComponent from './APIRequestComponent';
+import RecentEndpoints, { recentsStorage } from './RecentEndpointComponent';
+import { Package } from "lucide-react"; // lucide-react icons
 
 export default function HomeComponent() {
     const [queryParams, setQueryParams] = useState([]); // Initialize as an array
     const [body, setBody] = useState('');
     const [responseData, setResponseData] = useState(null); // State for API response data
+    const [responseMeta, setResponseMeta] = useState(null);
     const [errorMessage, setErrorMessage] = useState(null); // State for error messages
     const [requestBody, setRequestBody] = useState(''); // State for request body
     const [loading, setLoading] = useState(false); // State for loading indicator
-    const [activeTab, setActiveTab] = useState('tab1'); // State for the active tab
+    const [activeTab, setActiveTab] = useState('home');
+    const [recents, setRecents] = useState([]); // Future use: recent requests
+    const handleParamChange = (params) => {
+        setQueryParams(params);
+    };
+
+    //Load recents from localStorage on mount
+    useEffect(() => { setRecents(recentsStorage.load()); }, []);
+
+    // util: push (method, url) to recents, deduping and capping at 5, persist
+    const rememberEndpoint = (method, url) => {
+        if (!url || !/^https?:\/\//i.test(url)) return;
+        const item = { method: (method || 'GET').toUpperCase(), url: url.trim() };
+        setRecents(prev => {
+            const filtered = prev.filter(r => r.method !== item.method && r.url !== item.url);
+            const next = [item, ...filtered].slice(0, 5);
+            recentsStorage.save(next);
+            return next;
+        });
+    }
 
 
     // Function to handle submission from UrlInputComponent
@@ -29,9 +44,18 @@ export default function HomeComponent() {
         params: queryParams // Initialize params with the initial queryParams
     });
 
-       const handleSubmit = async (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault(); // Prevent default form submission behavior
+        if (loading) return; // prevent double submits
+
         setErrorMessage(null); // Clear previous error messages
+
+
+        const urlOk = /^https?:\/\//i.test(inputs.url || '');
+        if (!urlOk) {
+            setErrorMessage('URL must start with http:// or https://');
+            return;
+        }
 
         if (!inputs.url || !inputs.url.trim()) {
             setErrorMessage("Please enter a valid URL.");
@@ -55,17 +79,47 @@ export default function HomeComponent() {
         }));
     };
 
+    const handleReset = () => {
+        // Clear everything back to defaults
+        setQueryParams([]);
+        setRequestBody('');
+        setResponseData(null);
+        setErrorMessage(null);
+        setActiveTab('home');
+        setLoading(false);
+        setInputs({
+            url: '',
+            method: 'GET',
+            submitted: false,
+            params: [],
+        });
+        // optional: scroll to top
+        // window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
     // APIRequestComponent callback
-    const handleAPIResponse = (data, method, error = null) => {
+    const handleAPIResponse = (data, method, error = null, meta = null) => {
         if (error) {
             setErrorMessage(error);
             setResponseData(null);
+            setResponseMeta(null);
         } else {
             setResponseData(data);
             setErrorMessage(null);
+            setResponseMeta(meta);
+            // only remember on successful network response (status present)
+            if (meta?.status) rememberEndpoint(method, inputs.url);
         }
         setLoading(false); // stop spinner once child finishes
         setInputs(prev => ({ ...prev, submitted: false })); // reset submitted flag
+    };
+
+    const handlePickRecent = (item) => {
+        setInputs(prev => ({ ...prev, url: item.url, method: item.method, submitted: false }));
+    };
+    const handleClearRecents = () => {
+        setRecents([]);
+        recentsStorage.save([]);
     };
 
     // If you want MenuComponent to update headers later, wire a real setter:
@@ -75,8 +129,6 @@ export default function HomeComponent() {
         // setInputs(prev => ({ ...prev, headers: updatedMenu, submitted: false }));
     };
 
-    const handleBodyChange = (requestData) => setRequestBody(requestData);
-    const handleParamChange = (params) => setQueryParams(params);
 
     // Builds URL+params safely (respects existing ? or &)
     function constructURLWithParams(url, params) {
@@ -92,57 +144,125 @@ export default function HomeComponent() {
     }
 
     return (
-        <div className="flex home-container">
-            <div className="container mt-4">
-                <Heading level={2}>API Request Tool</Heading>
+        // In HomeComponent return()
+        <div className="bg-gradient-to-b from-sky-50 to-sky-100 py-10">
+            <div className="mx-auto w-full max-w-4xl px-4">
+                <div className="rounded-2xl bg-white shadow-xl ring-1 ring-black/5">
+                    <div className="px-6 py-6 border-b">
 
-                <MenuComponent onMenuChange={handleMenuChange} />
 
-                <div className="flex gap-2 items-center w-full mt-2">
-                    <UrlInputComponent
-                        inputs={inputs}
-                        setInputs={setInputs}
-                        loading={loading}
-                    />
-                    <button
-                        type="button"
-                        className="btn btn-primary"
-                        disabled={loading}
-                        onClick={handleSubmit}
-                    >
-                        {loading ? 'Loading…' : 'Send'}
-                    </button>
-                </div>
+                        <h1 className="flex items-center gap-2 text-3xl font-extrabold tracking-tight">
+                            <Package className="w-8 h-8 text-sky-600" />
+                            Perry ParcelRunner
+                        </h1>
 
-                <div className="container border mt-4">
-                    <TabsComponent activeTab={activeTab} setActiveTab={setActiveTab} />
-                </div>
-
-                {['POST', 'PUT', 'PATCH'].includes(inputs.method) && (
-                    <div className="container border mt-4">
-                        <Heading level={5}>Enter a Request Body</Heading>
-                        <RequestBodyComponent
-                            requestData={requestBody}
-                            onBodyChange={handleBodyChange}
-                        />
+                        <p className="text-slate-500 italic">
+                            Delivering APIs with Postal Precision 📦
+                        </p>
                     </div>
-                )}
 
-                <div className="border mt-4">
-                    <Heading level={3}>API Response</Heading>
+                    {/* Controls */}
+                    <div className="px-6 py-5 space-y-4">
+                        {/* Tabs (Query Params / Headers) */}
+                        <div className="flex flex-wrap gap-2">
+                            <TabsComponent
+                                activeTab={activeTab}
+                                setActiveTab={setActiveTab}
+                                onParamChange={handleParamChange}
+                            />
 
+                        </div>
+
+                        {/* Method + URL + Recents + Buttons */}
+                        <div className="flex items-center gap-3 flex-wrap">
+                            <div className="w-28">
+                                <select
+                                    className="flex-1 border-slate-300 focus:border-purple focus:ring-purple 
+                                        text-purple placeholder-purple/70"
+                                    value={inputs.method || 'GET'}
+                                    onChange={(e) => setInputs(p => ({ ...p, method: e.target.value, submitted: false }))}
+                                    disabled={loading}
+
+                                >
+
+                                    {['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].map(m => (
+                                        <option key={m} value={m}>{m}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <input
+                                className="bg-slate-100
+                                flex-1 border-slate-300 focus:border-sky-400 focus:ring-sky-400"
+                                type="text"
+                                placeholder="https://example.com"
+                                value={inputs.url || ''}
+                                onChange={(e) => setInputs(p => ({ ...p, url: e.target.value, submitted: false }))}
+                                disabled={loading}
+                            />
+
+                            {/* Recent endpoints dropdown */}
+                            <RecentEndpoints
+                                recents={recents}
+                                onPick={handlePickRecent}
+                                onClear={handleClearRecents}
+                            />
+
+                            <button
+                                type="button"
+                                onClick={handleSubmit}
+                                disabled={loading}
+                                className="rounded-xl px-4 py-2 font-medium text-white bg-sky-600 hover:bg-sky-700 disabled:opacity-50"
+                            >
+                                {loading ? 'Sending…' : 'Send'}
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handleReset}
+                                className="rounded-xl px-3 py-2 font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100"
+                            >
+                                Reset
+                            </button>
+                        </div>
+
+                        {/* Request body (only when needed) */}
+                        {['POST', 'PUT', 'PATCH'].includes(inputs.method) && (
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Request Body</label>
+                                <div className="rounded-xl border border-slate-200 overflow-hidden">
+                                    <RequestBodyComponent requestData={requestBody} onBodyChange={setRequestBody} />
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    <hr className="text-lg font-semibold text-violet-700 mb-6" />
                     <APIRequestComponent
                         onResponse={handleAPIResponse}
                         requestData={requestBody}
                         inputs={inputs}
-                        loading={loading}
                         setLoading={setLoading}
                     />
 
-                    <ResponseBody responseData={responseData} />
-                    {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
+                    {/* Response */}
+                    <div className="px-6 pb-6">
+                        <ResponsePanel
+                            requestData={requestBody}
+                            responseData={responseData}
+                            errorMessage={errorMessage}
+                            meta={responseMeta}   // added in step 2
+                            onCopy={() => navigator.clipboard.writeText(
+                                typeof responseData === 'object' && responseData !== null
+                                    ? JSON.stringify(responseData, null, 2)
+                                    : String(responseData ?? '')
+                            )}
+
+                        />
+                    </div>
+
                 </div>
             </div>
         </div>
+
     );
 }

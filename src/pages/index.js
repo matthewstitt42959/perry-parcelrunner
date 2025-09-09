@@ -20,7 +20,6 @@ export default function HomePage() {
      
       </Head>
 
-         <header><h3><i>Lightweight API Delivery with Postal Precision</i></h3></header>
 
       <React.StrictMode>
         <HomeComponent />           {/* Render the tabbed interface */}

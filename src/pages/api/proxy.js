@@ -1,13 +1,15 @@
 // src/pages/api/proxy.js
 import axios from 'axios';
 import https from 'https';
+import http from 'http';
 import fs from 'fs';
 import tls from 'tls';
+
 
 // --- Load your extra CA once, but APPEND to Node's default roots ---
 const CUSTOM_CA_PATH = 'C:/Users/266833/Documents/Workplace/certificate/cacert.pem';
 const extraCA = fs.existsSync(CUSTOM_CA_PATH) ? fs.readFileSync(CUSTOM_CA_PATH) : null;
-
+const httpAgent = new http.Agent({ keepAlive: true });
 const httpsAgent = new https.Agent({
     rejectUnauthorized: true,
     ca: extraCA ? [...tls.rootCertificates, extraCA] : tls.rootCertificates,
@@ -50,6 +52,7 @@ export default async function handler(req, res) {
         const upstream = await axios({
             url: apiUrl,
             method,
+            httpAgent,
             httpsAgent,
             headers,
             data: hasBody ? req.body : undefined,
@@ -69,10 +72,14 @@ export default async function handler(req, res) {
         }
 
         return res.status(upstream.status).send(upstream.data);
-    } catch (err) {
-        // Keep this short and clear
-        const status = err?.response?.status ?? (err?.code === 'ECONNABORTED' ? 504 : 502);
-        const msg = err?.message || 'Bad gateway';
-        return res.status(status).json({ error: msg });
-    }
+} catch (err) {
+  const status = err?.response?.status ?? (err?.code === 'ECONNABORTED' ? 504 : 502);
+  return res.status(status).json({
+    error: err?.message || 'Bad gateway',
+    code: err?.code,                       // e.g. ENOTFOUND, ECONNREFUSED
+    errno: err?.errno,
+    host: (() => { try { return new URL(apiUrl).host; } catch { return undefined; } })(),
+    protocol: (() => { try { return new URL(apiUrl).protocol; } catch { return undefined; } })(),
+  });
+}
 }

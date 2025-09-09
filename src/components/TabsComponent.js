@@ -1,41 +1,72 @@
-
+import React from 'react';
 import HeaderTab from './HeaderTabComponent';
-import { Button } from '@windmill/react-ui';
 import ParamsTab from './ParamsTabComponent';
-import React, { useState, useEffect } from 'react';
+import NotesTab from './NotesTab';
 
+export default function TabsComponent({ activeTab, setActiveTab, onParamChange }) {
+  const tabs = [
+    {
+      id: 'home',
+      label: 'Home',
+      panel: (
+        <p className="text-slate-600">
+          Welcome! Use the tabs to configure requests or jot notes.
+        </p>
+      ),
+    },
+    { id: 'params', label: 'Query Params', panel: <ParamsTab onParamChange={onParamChange} /> },
+    { id: 'headers', label: 'Headers', panel: <HeaderTab /> },
+    { id: 'notes', label: 'Notes', panel: <NotesTab /> },
+  ];
 
-export default function TabsComponent({ activeTab, setActiveTab }) {
+  const active = tabs.find((t) => t.id === activeTab) ?? tabs[0];
 
-  //Function to render the active tab's content
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'query-params-tab':
-        return <ParamsTab/>;
-
-      case 'request-headers-tab':
-        return <HeaderTab />;
-      default:
-        return 
-    }
-  };
   return (
-    <div>
-      <ul className="nav nav-tabs" role="tablist">
-        <li className="nav-item" role="presentation">
-        <Button className="bg-purple text-white hover:bg-purple-700 px-button py-button" id="query-params-tab" data-bs-toggle="tab" data-bs-target="#query-params" type="button" role="tab" aria-controls="query-params" aria-selected="true"
-            onClick={() => setActiveTab('query-params-tab')}>Query Params</Button>
-        </li>
-        <li className="nav-item" role="presentation">
-        <Button className="bg-purple text-white hover:bg-purple-700 px-button py-button" id="request-headers-tab" data-bs-toggle="tab" data-bs-target="#request-headers" type="button" role="tab" aria-controls="request-headers" aria-selected="false"
-            onClick={() => setActiveTab('request-headers-tab')}>Headers</Button>
-        </li>
+    <div className="w-full">
+      {/* Tab list */}
+      <div role="tablist" aria-label="Request configuration" className="flex flex-wrap gap-2">
+        {tabs.map((t) => {
+          const selected = active.id === t.id;
+          return (
+            <button
+              key={t.id}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              aria-controls={`panel-${t.id}`}
+              id={`tab-${t.id}`}
+              onClick={() => setActiveTab(t.id)}
+              className={[
+                'px-4 py-2 rounded-lg font-semibold transition-colors ring-1',
+                selected
+                  ? 'bg-violet-600 text-white ring-violet-600'
+                  : 'bg-violet-100 text-violet-800 hover:bg-violet-200 ring-violet-200',
+              ].join(' ')}
+            >
+              {t.label}
+            </button>
+          );
+        })}
+      </div>
 
-      </ul>
+      {/* Only the active panel */}
+      <div
+        className="mt-3 rounded-xl border border-slate-200 p-3"
+        role="tabpanel"
+        id={`panel-${active.id}`}
+        aria-labelledby={`tab-${active.id}`}
+      >
+        {active.id === 'home' ? (
+          active.panel
+        ) : (
+          <div>
+            <h2 className="text-lg font-semibold text-violet-700 mb-3">
+              {active.label}
+            </h2>
+            {active.panel}
+          </div>
+        )}
 
-      {/* Render the content of the active tab */}
-      <div className="tab-content">
-        {renderTabContent()}
       </div>
     </div>
   );

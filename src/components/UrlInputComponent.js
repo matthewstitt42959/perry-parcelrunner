@@ -27,12 +27,13 @@ export default function UrlInputComponent({ inputs, setInputs, loading }) {
         <option value="PUT">PUT</option>
         <option value="PATCH">PATCH</option>
         <option value="DELETE">DELETE</option>
-        <option value="HEAD">HEAD</option>
       </select>
 
       <input
         required
-        className="form-control flex-grow"
+        className="flex-1 rounded-xl border-slate-300 
+             focus:border-purple focus:ring-purple 
+             text-purple placeholder-purple/70"
         type="text"
         value={inputs.url || ''}
         onChange={handleUrlChange}
